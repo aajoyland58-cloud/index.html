@@ -1,0 +1,2988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E141C;
+    --bg2:#121A24;
+    --surface:#161F2B;
+    --surface2:#1C2836;
+    --line:#273545;
+    --line2:#344457;
+    --txt:#EAEFF5;
+    --muted:#96A5B8;
+    --muted2:#657486;
+    --up:#1FA871;
+    --up-dim:rgba(31,168,113,.16);
+    --down:#DB5460;
+    --down-dim:rgba(219,84,96,.16);
+    --accent:#4C86D6;
+    --accent-strong:#3C6FB8;
+    --accent-soft:rgba(76,134,214,.14);
+    --gold:#4C86D6;
+    --blue:#4C86D6;
+    --radius:12px;
+    --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    --disp:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    --body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%;font-size:16px}
+  body{
+    background:
+      radial-gradient(1100px 560px at 88% -12%, rgba(76,134,214,.06), transparent 60%),
+      var(--bg);
+    color:var(--txt);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.55;
+    letter-spacing:.1px;
+    min-height:100vh;
+    padding-bottom:60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- Ticker tape (signature) ---------- */
+  .ticker{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--bg2),var(--bg));
+    overflow:hidden;white-space:nowrap;position:relative;
+  }
+  .ticker::before,.ticker::after{
+    content:"";position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none;
+  }
+  .ticker::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+  .ticker::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
+  .tick-track{display:inline-flex;gap:0;padding:9px 0;animation:scroll 60s linear infinite}
+  .ticker:hover .tick-track{animation-play-state:paused}
+  .tick-item{display:inline-flex;align-items:baseline;gap:7px;padding:0 18px;border-right:1px solid var(--line);font-family:var(--mono);font-size:12.5px}
+  .tick-sym{color:var(--txt);font-weight:700}
+  .tick-px{color:var(--muted)}
+  .tick-chg{font-weight:600}
+  .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){.tick-track{animation:none}}
+
+  /* ---------- Header ---------- */
+  header{padding:22px 0 8px}
+  .head-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .logo{
+    width:44px;height:44px;border-radius:12px;flex:none;
+    background:linear-gradient(145deg,var(--accent),var(--accent-strong));
+    display:grid;place-items:center;font-family:var(--disp);font-weight:700;color:#fff;font-size:19px;
+    box-shadow:0 4px 18px rgba(76,134,214,.28);
+  }
+  .brand h1{font-family:var(--disp);font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1.05}
+  .brand p{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .head-idx{flex:1;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;min-width:0}
+  .hidx{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:7px 12px;display:flex;flex-direction:column;line-height:1.25;min-width:92px}
+  .hidx .hn{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.3px}
+  .hidx .hv{font-family:var(--mono);font-size:14px;font-weight:700}
+  .hidx .hc{font-family:var(--mono);font-size:10.5px;font-weight:600}
+  .idx-card{
+    display:flex;gap:22px;align-items:center;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;
+  }
+  .idx-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;font-weight:600}
+  .idx-val{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-.5px;margin-top:2px;cursor:text}
+  .idx-val:focus{outline:none;border-bottom:1px dashed var(--line2)}
+  .idx-sub{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:3px}
+  .mkt-pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:6px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .dot.open{background:var(--up);box-shadow:0 0 0 4px rgba(31,168,113,.18)}
+  .dot.closed{background:var(--down)}
+
+  .disclaimer{
+    margin-top:14px;font-size:12px;color:var(--muted);background:var(--bg2);
+    border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:9px 13px;
+  }
+  .disclaimer b{color:var(--gold)}
+
+  /* ---------- Quick links ---------- */
+  .quick{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 6px}
+  .qbtn{
+    display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    border-radius:11px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--txt);
+    transition:.16s border-color,.16s transform,.16s background;
+  }
+  .qbtn:hover{border-color:var(--line2);background:var(--surface2);transform:translateY(-1px)}
+  .qbtn .ic{width:9px;height:9px;border-radius:50%}
+  .qbtn small{color:var(--muted);font-weight:500}
+
+  /* ---------- Sync & role bar ---------- */
+  .syncbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;
+    background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 13px}
+  .sync-pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .sync-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted2)}
+  .sync-pill .dot.live{background:var(--up);box-shadow:0 0 0 4px rgba(31,168,113,.15)}
+  .sync-pill .dot.local{background:var(--gold)}
+  .sync-role{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);
+    border:1px solid var(--line);border-radius:20px;padding:3px 10px}
+  .sync-role.editor{color:var(--accent);border-color:var(--line2);background:var(--accent-soft)}
+  .sync-note{font-size:11.5px;color:var(--muted2);flex:1;min-width:120px;text-align:right}
+  body.viewonly .owner-only{display:none!important}
+  /* Notes & guidance sirf editor (owner) ko dikhein, boss (view-only) ko nahi */
+  body.viewonly .disclaimer,
+  body.viewonly .p-note,
+  body.viewonly .sync-note,
+  body.viewonly .pf-src-note,
+  body.viewonly .footer,
+  body.viewonly .ff-hint{display:none!important}
+  body.viewonly .del{display:none!important}
+
+  /* ---------- Layout grid ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .panel.span2{grid-column:1 / -1}
+  .p-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;border-bottom:1px solid var(--line)}
+  .p-title{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:15.5px}
+  .p-title .bar{width:4px;height:17px;border-radius:2px;background:var(--accent)}
+  .p-title.gold .bar{background:var(--gold)} .p-title.blue .bar{background:var(--blue)}
+  .p-body{padding:16px 17px}
+  .p-note{font-size:11.5px;color:var(--muted2)}
+
+  /* buttons */
+  .btn{font-family:var(--body);cursor:pointer;border:1px solid var(--line2);background:var(--surface2);color:var(--txt);
+    border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.08);color:#fff}
+  .btn.sm{padding:5px 9px;font-size:11.5px}
+  .btn.ghost{background:transparent}
+  .btn.danger:hover{border-color:var(--down);color:var(--down)}
+
+  /* ---------- Watchlist ---------- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{cursor:pointer;padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:600;color:var(--muted);border:1px solid transparent}
+  .tab:hover{color:var(--txt)}
+  .tab.active{background:var(--accent-soft);color:var(--accent);border-color:var(--line2)}
+  .wl-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .search{flex:1;min-width:140px;position:relative}
+  .search input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 12px 8px 32px;color:var(--txt);font-size:13px;font-family:var(--body)}
+  .search input:focus{outline:none;border-color:var(--line2)}
+  .search svg{position:absolute;left:10px;top:9px;opacity:.5}
+
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+  .tbl th{text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted2);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+  .tbl th.l,.tbl td.l{text-align:left}
+  .tbl td{padding:9px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-weight:600}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr:hover td{background:var(--bg2)}
+  .sym{display:flex;flex-direction:column;gap:1px}
+  .sym b{font-family:var(--mono);font-size:14px;letter-spacing:.2px}
+  .sym span{font-family:var(--body);font-size:11px;color:var(--muted2);font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{font-size:9px;font-family:var(--body);font-weight:700;padding:1px 6px;border-radius:5px;letter-spacing:.4px;vertical-align:middle;margin-left:6px}
+  .badge.bank{background:var(--accent-soft);color:var(--accent)}
+  .badge.kmi{background:var(--up-dim);color:var(--up)}
+
+  /* ---------- Indices grid ---------- */
+  .idx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .idx-cell{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .idx-cell .nm{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.3px}
+  .idx-cell .idx-fn{font-size:9.5px;color:var(--muted2);line-height:1.25;margin-top:2px;min-height:22px}
+  .idx-cell .vv{font-family:var(--mono);font-weight:700;font-size:16px;margin-top:3px}
+  .idx-cell .cc{font-family:var(--mono);font-size:11.5px;font-weight:600;margin-top:2px}
+  .live-tag{font-size:9.5px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:5px;
+    background:var(--up-dim);color:var(--up);vertical-align:middle;margin-left:6px}
+  .live-tag.off{background:var(--surface2);color:var(--muted2)}
+  /* ---------- Dip list ---------- */
+  .dip{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .dip:last-child{border-bottom:none}
+  .dip .di{flex:0 0 40%;min-width:0}
+  .dip .di b{font-family:var(--mono);font-size:14px}
+  .dip .di small{display:block;color:var(--muted2);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dip .dbar{flex:1;height:9px;background:var(--line);border-radius:6px;overflow:hidden;min-width:40px}
+  .dip .dbar span{display:block;height:100%;background:linear-gradient(90deg,var(--down),#ff8a8a);border-radius:6px}
+  .dip .dv{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--muted);white-space:nowrap;display:flex;flex-direction:column;gap:2px;min-width:170px}
+  .dip .dv .dv-now{color:var(--text);font-size:13px;font-weight:700}
+  .dip .dv .dv-hl{font-size:12px}
+  .dip .dv .dv-hl b{font-weight:700}
+  .dip .dd{font-family:var(--mono);font-size:14.5px;font-weight:700;color:var(--down);min-width:70px;text-align:right}
+  .dip a.dc{color:var(--muted2);font-size:11px;font-weight:600;white-space:nowrap}
+  .dip a.dc:hover{color:var(--accent)}
+  @media(max-width:640px){ .dip .dbar{display:none} .dip .di{flex:1} }
+  .badge.t20{background:var(--accent-soft);color:var(--accent)}
+  .px-in{width:78px;background:var(--bg2);border:1px solid var(--line);border-radius:7px;padding:4px 7px;color:var(--txt);font-family:var(--mono);font-size:13px;text-align:right;font-weight:600}
+  .px-in:focus{outline:none;border-color:var(--accent)}
+  .chartlink{color:var(--muted);font-family:var(--body);font-size:11.5px;font-weight:600}
+  .chartlink:hover{color:var(--accent)}
+  .wl-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;flex-wrap:wrap;gap:8px}
+  .scrollx{overflow-x:auto}
+  .tbl-scroll{max-height:430px;overflow-y:auto}
+
+  /* ---------- Chart panel ---------- */
+  .chart-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  select,input.txt{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;color:var(--txt);font-size:13px;font-family:var(--body)}
+  select:focus,input.txt:focus{outline:none;border-color:var(--line2)}
+  .chart-links{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .clink{display:flex;flex-direction:column;gap:3px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;transition:.15s}
+  .clink:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .clink b{font-size:13px;display:flex;align-items:center;gap:7px}
+  .clink small{color:var(--muted);font-size:11px}
+
+  /* ---------- Calculator ---------- */
+  .calc-tabs{display:flex;gap:6px;margin-bottom:13px}
+  .calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .field input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--txt);font-family:var(--mono);font-size:14px;font-weight:600}
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .calc-out{margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px;font-family:var(--mono)}
+  .calc-out .row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px}
+  .calc-out .row span:first-child{color:var(--muted);font-family:var(--body);font-weight:500}
+  .calc-out .row.total{border-top:1px solid var(--line2);margin-top:6px;padding-top:10px;font-size:16px;font-weight:700}
+  /* plain calc */
+  .pcalc{max-width:280px;margin:0 auto}
+  .pcalc-disp{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px 16px;text-align:right;font-family:var(--mono);font-size:28px;font-weight:700;margin-bottom:11px;min-height:58px;word-break:break-all;overflow:hidden}
+  .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .key{cursor:pointer;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:15px 0;text-align:center;font-family:var(--mono);font-size:17px;font-weight:600;transition:.12s;user-select:none}
+  .key:hover{background:var(--line);border-color:var(--line2)}
+  .key.op{color:var(--accent)}
+  .key.eq{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .key.fn{color:var(--muted)}
+
+  /* ---------- Portfolio ---------- */
+  .pf-add{display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr auto auto;gap:8px;margin-bottom:13px}
+  .pf-add input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--txt);font-family:var(--mono);font-size:12.5px;font-weight:600;width:100%}
+  .pf-add input:focus{outline:none;border-color:var(--accent)}
+  .pf-add input::placeholder{color:var(--muted2);font-family:var(--body);font-weight:500}
+  .pf-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .stat .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+  .stat .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:3px}
+  .empty{text-align:center;color:var(--muted2);font-size:13px;padding:22px 0}
+  .del{cursor:pointer;color:var(--muted2);font-size:16px;line-height:1;padding:2px 6px;border-radius:6px}
+  .del:hover{color:var(--down);background:var(--down-dim)}
+  .pf-summary{grid-template-columns:repeat(4,1fr)}
+  .pf-status{font-size:12px;color:var(--accent);margin:-4px 0 12px;min-height:0;transition:.2s}
+  .pf-status:empty{margin:0}
+  .pf-in{width:64px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:4px 6px;color:var(--txt);font-family:var(--mono);font-size:12.5px;font-weight:600;text-align:right}
+  .pf-in:focus{outline:none;border-color:var(--accent)}
+  .pf-in.editing{border-color:var(--accent);background:rgba(76,134,214,.08)}
+  .pf-acts{display:flex;gap:5px;justify-content:flex-end;white-space:nowrap}
+  .pf-actbtn{cursor:pointer;font-family:var(--body);font-weight:600;font-size:11px;border-radius:6px;padding:4px 9px;border:1px solid var(--line2);background:var(--surface2);color:var(--txt);transition:.14s}
+  .pf-actbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .pf-actbtn.save{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pf-actbtn.save:hover{filter:brightness(1.08);color:#fff}
+  .pf-actbtn.del:hover{border-color:var(--down);color:var(--down)}
+  tr.editing-row td{background:rgba(76,134,214,.06)}
+  .pf-cancelbtn{white-space:nowrap}
+
+  /* ---------- Portfolio form v2 (labeled fields) ---------- */
+  .pf-form2{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px;
+    background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .pf-form2 .ff{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .pf-form2 .ff-wide{grid-column:span 2}
+  .pf-form2 label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .pf-form2 input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:9px 10px;color:var(--txt);font-family:var(--mono);font-size:13px;font-weight:600}
+  .pf-form2 input:focus{outline:none;border-color:var(--accent)}
+  .pf-form2 input::placeholder{color:var(--muted2);font-family:var(--body);font-weight:500}
+  .pf-form2 .ff-actions{grid-column:1 / -1;display:flex;gap:9px;justify-content:flex-end}
+  .pf-form2 .ff-full{grid-column:1 / -1}
+  .pf-form-title{font-family:var(--disp);font-weight:600;font-size:14px}
+  .pf-form-title span{color:var(--muted2);font-weight:500;font-size:11.5px}
+  .ff .opt{color:var(--muted2);text-transform:none;letter-spacing:0;font-weight:500}
+  .ff-hint{font-size:11px;color:var(--accent);font-weight:600;min-height:13px;margin-top:2px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pf-preview{background:var(--surface);border:1px dashed var(--line2);border-radius:9px;padding:10px 13px;
+    font-family:var(--mono);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+  .pf-preview b{font-family:var(--mono)}
+  .pf-src-note{font-size:11.5px;color:var(--muted2);line-height:1.5;background:var(--surface);border-radius:8px;padding:8px 11px;border-left:3px solid var(--gold)}
+  .pf-src-note b{color:var(--muted)}
+
+  /* ---------- Portfolio table (reference-style) ---------- */
+  .pf-tbl td{vertical-align:middle}
+  .pf-tbl{width:100%;min-width:0}
+  #pfScroll{max-height:60vh;overflow:auto}
+  #pfTable thead th{position:sticky;top:0;z-index:2;background:var(--surface)}
+  #pfTable{font-size:11px}
+  #pfTable td, #pfTable th{padding:7px 4px}
+  #pfTable .pf-nm b{font-size:11.5px}
+  #pfTable .pf-nm small{font-size:9px;max-width:92px}
+  #pfTable .pf-stock{min-width:0;gap:7px}
+  #pfTable .pf-tile{width:30px;height:30px;font-size:9px}
+  #pfTable .pf-plat{font-size:10px;white-space:nowrap}
+  #pfTable .pf-cur small{font-size:9px}
+  #pfTable .pf-notes{font-size:9.5px;max-width:70px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+  .tbl-scroll .tbl{min-width:540px}
+  .pf-stock{display:flex;align-items:center;gap:10px;min-width:150px;text-decoration:none;color:inherit;cursor:pointer}
+  a.pf-stock:hover .pf-nm b{color:var(--accent);text-decoration:underline}
+  a.pf-stock:hover .pf-tile{border-color:var(--accent)}
+  .pf-tile{flex:none;width:38px;height:38px;border-radius:9px;background:var(--surface2);border:1px solid var(--line2);
+    display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:11px;color:var(--txt);letter-spacing:.3px}
+  .pf-nm{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+  .pf-nm b{font-family:var(--mono);font-size:13.5px}
+  .pf-nm small{font-family:var(--body);font-size:11px;color:var(--muted2);font-weight:500;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pf-cur{display:flex;flex-direction:column;line-height:1.25}
+  .pf-cur small{font-size:11px;font-weight:600}
+  .pf-plat{display:inline-block;background:var(--surface2);border:1px solid var(--line2);border-radius:7px;
+    padding:2px 9px;font-family:var(--body);font-size:11.5px;font-weight:600;color:var(--muted)}
+  .pf-date{font-size:12px;color:var(--muted);white-space:nowrap}
+  .pf-notes{font-family:var(--body);font-weight:500;color:var(--muted);font-size:12px;display:inline-block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+  .pf-notes.muted{color:var(--muted2)}
+  .pf-actcol{white-space:nowrap}
+  .pf-ic{cursor:pointer;width:28px;height:28px;border-radius:7px;border:1px solid var(--line2);background:var(--surface2);
+    color:var(--muted);font-size:13px;line-height:1;display:inline-grid;place-items:center;transition:.14s;padding:0}
+  .pf-ic:hover{border-color:var(--accent);color:var(--accent)}
+  .pf-ic.del:hover{border-color:var(--down);color:var(--down)}
+  .pf-ic.chart:hover{border-color:var(--accent);color:var(--accent)}
+  .pf-ic.sell{font-weight:700}
+  .pf-ic.sell:hover{border-color:var(--up);color:var(--up)}
+  .sell-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px}
+  .sell-grid label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted)}
+  .sell-grid input{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 10px;color:var(--text);font-size:15px}
+  .sell-preview{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;font-size:13.5px;margin-top:6px;min-height:20px}
+  .rlz-total{font-size:14px;font-weight:700;white-space:nowrap}
+  .inc-bar{height:14px;background:var(--line);border-radius:8px;overflow:hidden}
+  .inc-bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:8px;transition:width .4s}
+  .mc-sel{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px}
+  .mc-preview-box{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13.5px}
+  .mc-preview-box .mc-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .mc-preview-box .mc-row:last-child{border-bottom:none}
+  .mc-preview-box h4{margin:12px 0 6px;font-size:13px;color:var(--accent)}
+  .fresh-bar{margin:0 0 4px;padding:0;font-size:12.5px;font-weight:600;transition:all .2s}
+  .fresh-bar.ok{color:var(--muted);padding:2px 2px 6px}
+  .fresh-bar.warn{background:rgba(227,73,72,.14);border:1px solid var(--down);color:var(--down);border-radius:9px;padding:9px 13px;margin-bottom:12px}
+  .mn-kse{font-family:var(--mono);margin-bottom:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:9px}
+  .mn-day{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;font-size:15px}
+  .mn-day span{color:var(--muted);font-weight:700} .mn-day small{font-size:11px;opacity:.75;font-weight:700}
+  .mn-day b{font-size:16.5px}
+  .mn-day.after{border-top:1px dashed var(--line);margin-top:2px;padding-top:7px}
+  .mn-prev{font-size:12px;font-weight:600;color:var(--muted);margin-top:6px}
+  .mn-newshead{font-size:11px;font-weight:700;color:var(--accent);margin:10px 0 4px;letter-spacing:.3px}
+  .mn-newsitem{display:block;font-size:13px;color:var(--text);padding:6px 0;border-bottom:1px dashed var(--line);line-height:1.35;text-decoration:none}
+  .mn-newsitem:hover{color:var(--accent)}
+  .mn-newsitem:last-of-type{border-bottom:none}
+  .mn-note{padding:9px 0;border-bottom:1px solid var(--line)}
+  .mn-note:last-child{border-bottom:none}
+  .mn-note .d{font-size:11px;color:var(--muted2);font-family:var(--mono)}
+  .mn-note .t{font-size:13.5px;margin-top:2px;line-height:1.45}
+  .mn-note .x{float:right;cursor:pointer;color:var(--muted2);font-size:12px}
+  .mn-note .x:hover{color:var(--down)}
+  .wd-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:4px 0 10px}
+  .wd-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}
+  .wd-grid input,.wd-grid select{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px}
+  .wd-more{margin:2px 0 10px} .wd-more summary{cursor:pointer;color:var(--muted);font-size:12.5px}
+  .wd-out{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 15px;font-size:13.5px}
+  .wd-out .row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .wd-out .row:last-child{border-bottom:none}
+  .wd-out .row.tot{font-weight:700;font-size:15.5px;border-top:2px solid var(--line2);margin-top:4px;padding-top:9px;border-bottom:none;color:var(--up)}
+  @media(max-width:820px){.wd-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.wd-grid{grid-template-columns:1fr}}
+  /* PIN modal */
+  .modal-ov{position:fixed;inset:0;background:rgba(6,10,15,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-ov.show{display:flex}
+  .modal{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .modal-title{font-family:var(--disp);font-weight:700;font-size:17px}
+  .modal-sub{color:var(--muted);font-size:12.5px;margin:5px 0 16px}
+  .pin-field{position:relative}
+  .pin-field input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 44px 12px 14px;color:var(--txt);font-family:var(--mono);font-size:20px;letter-spacing:6px;font-weight:700;text-align:center}
+  .pin-field input:focus{outline:none;border-color:var(--accent)}
+  .pin-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:16px;opacity:.6;padding:6px}
+  .pin-eye:hover{opacity:1}
+  .pin-err{color:var(--down);font-size:12px;min-height:16px;margin-top:8px;text-align:center}
+  .modal-btns{display:flex;gap:9px;margin-top:8px}
+  .modal-lg{max-width:480px}
+  .bulk-ta{width:100%;min-height:150px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+    padding:11px 13px;color:var(--txt);font-family:var(--mono);font-size:13px;resize:vertical;margin-bottom:10px}
+  .bulk-ta:focus{outline:none;border-color:var(--accent)}
+  .modal-sub code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:11px;color:var(--accent)}
+  .bulk-preview{font-family:var(--mono);font-size:12px;color:var(--muted);max-height:120px;overflow-y:auto;
+    margin-bottom:10px;line-height:1.7;min-height:18px}
+  .bulk-preview .ok{color:var(--up)} .bulk-preview .bad{color:var(--muted2)}
+  .modal-btns .btn{flex:1;justify-content:center;text-align:center;padding:10px}
+  .alloc-wrap{margin-bottom:16px}
+  .alloc-head{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:7px}
+  .alloc-head span:last-child{text-transform:none;letter-spacing:0;color:var(--muted)}
+  .alloc-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--bg2);border:1px solid var(--line)}
+  .alloc-seg{height:100%;transition:.3s}
+  .alloc-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px}
+  .alloc-legend .li{display:flex;align-items:center;gap:6px;font-size:11.5px;font-family:var(--mono);color:var(--muted)}
+  .alloc-legend .li b{color:var(--txt)}
+  .alloc-legend .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  /* movers */
+  .mv{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .mv:last-child{border-bottom:none}
+  .mv .rk{width:20px;color:var(--muted2);font-family:var(--mono);font-size:12px;font-weight:700;flex:none}
+  .mv .mi{flex:1;min-width:0}
+  .mv .mi b{font-family:var(--mono);font-size:13.5px}
+  .mv .mi small{display:block;color:var(--muted2);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mv .mp{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right}
+  .mv .mc{font-family:var(--mono);font-size:12.5px;font-weight:700;min-width:64px;text-align:right}
+  .mv a.mchart{color:var(--muted2);font-size:11px;font-weight:600;flex:none}
+  .mv a.mchart:hover{color:var(--accent)}
+
+  /* ---------- Link lists (yt/wa/news/ipo) ---------- */
+  .lk{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+  @media(max-width:820px){ .twocol{grid-template-columns:1fr} }
+  .broker-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:6px 0 16px}
+  .bcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .bcard .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .bcard .bn{font-weight:700;font-size:13.5px}
+  .bcard .bp{font-family:var(--mono);font-size:10.5px;color:var(--muted2);background:var(--surface);padding:2px 7px;border-radius:5px}
+  .bcard .brow{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--muted)}
+  .bcard .brow b{font-family:var(--mono);color:var(--txt);font-weight:600}
+  .bcard .bpnl{font-family:var(--mono);font-weight:700;font-size:15px;margin-top:5px;padding-top:8px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+  .lk:last-child{border-bottom:none}
+  .lk .av{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;font-weight:800;font-size:15px;font-family:var(--disp)}
+  .av.yt{background:var(--accent-soft);color:var(--accent)}
+  .av.wa{background:var(--accent-soft);color:var(--accent)}
+  .av.nw{background:var(--accent-soft);color:var(--accent)}
+  .av.ipo{background:var(--accent-soft);color:var(--accent)}
+  .lk .meta{flex:1;min-width:0}
+  .lk .meta b{font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lk .meta small{color:var(--muted);font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lk .go{color:var(--muted);font-size:12px;font-weight:600;flex:none}
+  .lk:hover .go{color:var(--accent)}
+  .add-row{display:flex;gap:8px;margin-top:13px}
+  .add-row input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;color:var(--txt);font-size:12.5px}
+  .add-row input:focus{outline:none;border-color:var(--accent)}
+  .add-row input::placeholder{color:var(--muted2)}
+
+  .ipo-tag{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.4px}
+  .ipo-tag.up{background:var(--accent);color:#fff}
+  .ipo-tag.done{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+
+  .footer{text-align:center;color:var(--muted2);font-size:11.5px;margin-top:26px;line-height:1.7}
+  .footer a{color:var(--muted);text-decoration:underline}
+
+  @media (max-width:820px){
+    .grid{grid-template-columns:1fr}
+    .panel.span2{grid-column:auto}
+    .idx-card{width:100%;justify-content:space-between}
+    .head-idx{order:3;width:100%;justify-content:flex-start;margin-top:4px}
+    .head-row{align-items:flex-start}
+    .pf-add{grid-template-columns:1fr 1fr;}
+    .pf-add .pf-addbtn{grid-column:1 / 2}
+    .pf-add .pf-cancelbtn{grid-column:2 / 3}
+    .pf-form2{grid-template-columns:1fr 1fr}
+    .pf-form2 .ff-wide{grid-column:1 / -1}
+    .pf-summary{grid-template-columns:1fr 1fr}
+    .chart-links{grid-template-columns:1fr}
+    .broker-sum{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:640px){
+    .wrap{padding:0 12px}
+    .brand h1{font-size:20px}
+    .brand p{font-size:11.5px}
+    .idx-val{font-size:24px}
+    .p-body{padding:14px}
+    .tick-item{font-size:11.5px}
+    .idx-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+    .head-idx .hidx{min-width:80px;padding:6px 9px}
+    .broker-sum{grid-template-columns:1fr}
+    .p-head{flex-wrap:wrap;gap:8px}
+    .tabs{flex-wrap:wrap}
+  }
+  @media (max-width:520px){
+    .calc-grid{grid-template-columns:1fr}
+    .pf-summary{grid-template-columns:1fr}
+    .pf-form2{grid-template-columns:1fr}
+    .sym span{max-width:120px}
+    .brand h1{font-size:18px}
+    .quick{gap:7px}
+    .keys{grid-template-columns:repeat(4,1fr);gap:6px}
+  }
+</style>
+</head>
+<body class="viewonly">
+
+<!-- Ticker tape -->
+<div class="ticker"><div class="tick-track" id="ticker"></div></div>
+
+<div class="wrap">
+  <header>
+    <div class="head-row">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <h1>PSX Dashboard</h1>
+          <p>Pakistan Stock Exchange &middot; watchlist, P&amp;L, tools &amp; feeds</p>
+        </div>
+      </div>
+      <div class="head-idx" id="headIdx"></div>
+      <div class="idx-card">
+        <div>
+          <div class="idx-label">KSE&#8209;100 Index</div>
+          <div class="idx-val" id="kseVal" contenteditable="true" spellcheck="false" title="Tap to edit index">187,455</div>
+          <div class="idx-sub up" id="kseChgLine"><span id="kseArrow">▲</span> <span id="kseChgVal" contenteditable="true" spellcheck="false" title="Tap to edit change (points)">+2,082</span> <span id="kseChgPct">(+1.12%)</span></div>
+        </div>
+        <div>
+          <div class="idx-label">Market</div>
+          <div class="mkt-pill"><span class="dot" id="mktDot"></span><span id="mktTxt">Checking…</span></div>
+          <div class="idx-sub" style="color:var(--muted);font-size:11px" id="mktHours">Mon–Thu 9:30–15:30 PKT</div>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <b>Note:</b> Prices robot se <b>auto-update</b> hoti hain (market hours mein har ~15 min, ~5-min delayed).
+      Robot band ho to Watchlist mein <b>⇊ Bulk update</b> ya <b>✎ Edit prices</b> se khud update kar sakte hain.
+      Ye tool sirf tracking ke liye hai, <b>investment advice nahi</b>.
+    </div>
+
+    <!-- Quick links -->
+    <div class="quick" id="quick"></div>
+
+    <!-- Sync & role bar -->
+    <div class="syncbar">
+      <span class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncTxt">Connecting…</span></span>
+      <span class="sync-role" id="roleTxt">View only</span>
+      <button class="btn sm" id="roleBtn">🔓 Unlock editing</button>
+      <span class="sync-note" id="syncNote"></span>
+    </div>
+  </header>
+
+  <div id="freshBar" class="fresh-bar"></div>
+
+  <div class="grid">
+
+    <!-- GOLD ETF (IAU) FLIP TRACKER -->
+    <section class="panel span2" id="goldPanel" style="display:none">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:#e0a83e"></span>🥇 Gold ETF (IAU) — Flip Tracker <span style="font-size:11px;color:var(--muted2);font-weight:600">USD · PSX se alag</span></div>
+      </div>
+      <div class="p-body">
+        <div class="wd-grid owner-only">
+          <label>Buy price / share ($) — all-in<input id="glBuy" type="number" step="0.01" placeholder="84.38"></label>
+          <label>Shares<input id="glQty" type="number" step="1" placeholder="10"></label>
+          <label>Current price / share ($)<input id="glCur" type="number" step="0.01" placeholder="84.17"></label>
+          <label>Sell target %<input id="glTgt" type="number" step="0.1" placeholder="5.5"></label>
+        </div>
+        <div class="wd-out" id="glOut"></div>
+        <p class="p-note" style="margin-top:9px">IAU = iShares Gold Trust (US ETF, sone ki price track karta hai). Ye <b>USD</b> mein hai — PSX (PKR) portfolio se <b>alag</b>. Current price apne broker app se daalein (auto nahi aata). ⚠️ Har buy/sell par fee (~$2.10) lagti hai — net 5.5% ke liye price thoda zyada oopar jana chahiye. Tracking tool hai, <b>investment advice nahi</b>.</p>
+      </div>
+    </section>
+
+    <!-- PORTFOLIO / P&L -->
+    <section class="panel span2">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>Portfolio &amp; P&amp;L</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn sm owner-only" id="applyTxnBtn" title="Ye July 2026 KTrade+AHL buy/sell ek dafa daal degi" style="border-color:var(--up);color:var(--up)">⚙ Apply July buys/sells</button>
+          <button class="btn sm owner-only" id="addMifBtn" title="Meezan Islamic Fund holding ek dafa add karti hai" style="border-color:var(--accent);color:var(--accent)">＋ Add Meezan Fund</button>
+          <button class="btn sm owner-only" id="jul30Btn" title="30-Jul KTrade buys ek dafa add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 30-Jul buys</button>
+          <button class="btn sm owner-only" id="orbitBtn" title="Orbit Securities SEARL holding ek dafa add karti hai" style="border-color:var(--accent);color:var(--accent)">＋ Add Orbit (SEARL)</button>
+          <button class="btn sm owner-only" id="sep11Btn" title="11-Sep Arif Habib buys ek dafa add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 11-Sep AHL buys</button>
+          <button class="btn sm owner-only" id="sepSellBtn" title="7-Sep Arif Habib sells ek dafa book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 7-Sep AHL sells</button>
+          <button class="btn sm owner-only" id="sepFixBtn" title="Sep AHL buy prices ko all-in par set karti hai" style="border-color:var(--muted);color:var(--muted)">⚙ Fix Sep buy prices</button>
+          <button class="btn sm owner-only" id="meblSellBtn" title="18-Sep KTrade MEBL 2855 sell book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 18-Sep MEBL sell</button>
+          <button class="btn sm owner-only" id="sep21Btn" title="21-Sep Arif Habib sells (5) book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 21-Sep AHL sells</button>
+          <button class="btn sm owner-only" id="pdfBtn">⬇ PDF statement</button>
+          <button class="btn sm primary owner-only" id="addToggle">＋ Add Buy</button>
+          <button class="btn sm ghost danger owner-only" id="clearPf">Clear all</button>
+        </div>
+      </div>
+      <div class="p-body">
+        <div class="pf-form2 owner-only" id="pfForm" style="display:none">
+          <div class="pf-form-title ff-full">🟢 New Buy Entry <span>— Symbol, Qty aur Buy price zaroori, baaki optional</span></div>
+          <div class="ff"><label>Symbol *</label><input id="pfSym" list="symList" autocomplete="off" placeholder="Type e.g. UBL"><span class="ff-hint" id="pfSymHint"></span></div>
+          <div class="ff"><label>Qty *</label><input id="pfQty" type="number" placeholder="100" min="0"></div>
+          <div class="ff"><label>Buy price *</label><input id="pfCost" type="number" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="ff"><label>Current <span class="opt">(snapshot · edit if wrong)</span></label><input id="pfCur" type="number" placeholder="auto from watchlist" min="0" step="0.01"></div>
+          <div class="ff"><label>Target <span class="opt">(optional)</span></label><input id="pfTarget" type="number" placeholder="—" min="0" step="0.01"></div>
+          <div class="ff"><label>Platform <span class="opt">(optional)</span></label><input id="pfPlatform" list="platList" placeholder="KTrade"></div>
+          <div class="ff"><label>Date <span class="opt">(auto today)</span></label><input id="pfDate" type="date"></div>
+          <div class="ff ff-wide"><label>Notes <span class="opt">(optional)</span></label><input id="pfNotes" placeholder="e.g. buy → sell target, catalyst…"></div>
+          <div class="pf-preview ff-full" id="pfPreview">Symbol aur qty daaltay hi yahan invested / value / P&amp;L preview aa jayega.</div>
+          <div class="pf-src-note ff-full">ℹ️ "Current" price built-in <b>snapshot</b> hai (live nahi). Galat lage to yahin sahi likh dein — ye position ke saath save hoga. Sab stocks ke rate ek saath update karne ke liye: <b>Watchlist → ✎ Edit prices</b> (Editor mode) — ye boss ko bhi live sync hota hai aur P&amp;L har jagah update kar deta hai.</div>
+          <div class="ff-actions">
+            <button class="btn ghost" id="pfClear">Cancel</button>
+            <button class="btn primary" id="pfAdd">✓ Save Buy</button>
+          </div>
+          <datalist id="symList"></datalist>
+          <datalist id="platList">
+            <option value="KTrade"></option>
+            <option value="Arif Habib (AHL)"></option>
+            <option value="AKD"></option>
+            <option value="Topline"></option>
+            <option value="JS Global"></option>
+            <option value="Next Capital"></option>
+            <option value="Sherman"></option>
+          </datalist>
+        </div>
+        <div class="pf-status" id="pfStatus"></div>
+        <div class="pf-summary">
+          <div class="stat"><div class="k" id="sInvK">Invested</div><div class="v" id="sInv">Rs 0</div></div>
+          <div class="stat"><div class="k">Current value</div><div class="v" id="sCur">Rs 0</div></div>
+          <div class="stat"><div class="k">Total P&amp;L (unrealized)</div><div class="v" id="sPnl">Rs 0</div></div>
+          <div class="stat"><div class="k">Today&#39;s P&amp;L</div><div class="v" id="sDay">Rs 0</div></div>
+          <div class="stat"><div class="k">Realized P&amp;L (booked)</div><div class="v" id="sRlz">Rs 0</div></div>
+        </div>
+        <div class="broker-sum" id="brokerSum" style="display:none"></div>
+        <div class="alloc-wrap" id="allocWrap" style="display:none">
+          <div class="alloc-head"><span>Allocation</span><span id="allocBest"></span></div>
+          <div class="alloc-bar" id="allocBar"></div>
+          <div class="alloc-legend" id="allocLegend"></div>
+        </div>
+        <div class="scrollx" id="pfScroll">
+          <table class="tbl pf-tbl" id="pfTable" style="display:none">
+            <thead><tr>
+              <th class="l">Stock</th><th>Qty</th><th>Buy price</th><th>Current</th>
+              <th>Invested</th><th>Value now</th><th>P/L $</th><th>P/L %</th>
+              <th>Target</th><th>Platform</th><th>Date</th><th class="l">Notes</th>
+              <th class="pf-actcol">Actions</th>
+            </tr></thead>
+            <tbody id="pfBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="pfEmpty">Abhi koi position nahi. Upar <b>+ Add position</b> daba kar entry karein — Symbol, Qty, Buy price zaroori; Target / Platform / Date / Notes optional. Current price watchlist se auto aati hai. Row ke <b>✎</b> se edit, <b>✕</b> se delete, <b>▤</b> se chart.</div>
+      </div>
+    </section>
+
+    <!-- 5% TARGET & INCENTIVE -->
+    <section class="panel span2" id="incPanel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--up)"></span>🎯 5% Monthly Target &amp; Incentive</div>
+      </div>
+      <div class="p-body">
+        <div class="pf-summary" style="margin-bottom:10px">
+          <div class="stat"><div class="k">Capital (invested)</div><div class="v" id="incCap">Rs 0</div></div>
+          <div class="stat"><div class="k">5% Monthly Target</div><div class="v" id="incTgt">Rs 0</div></div>
+          <div class="stat"><div class="k">Realized Profit (booked)</div><div class="v" id="incReal">Rs 0</div></div>
+          <div class="stat"><div class="k">Incentive (5% of profit)</div><div class="v" id="incAmt">Rs 0</div></div>
+        </div>
+        <div class="inc-bar"><span id="incFill"></span></div>
+        <p class="p-note" id="incNote" style="margin-top:8px"></p>
+      </div>
+    </section>
+
+    <!-- SOLD HISTORY (REALIZED) -->
+    <section class="panel span2" id="realizedPanel" style="display:none">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>🧾 Sold History — Realized P&amp;L</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="rlz-total" id="rlzTotal"></div>
+          <button class="btn sm" id="dlSale" title="Sale Journal Excel/CSV download">⬇ Sale Journal</button>
+          <button class="btn sm primary owner-only" id="addSellBtn" title="Manually ek sell entry add karein">＋ Add Sell</button>
+        </div>
+      </div>
+      <div class="pf-src-note ff-full">Bech di gayi positions ka <b>permanent record</b> (buy vs sell price + realized P&amp;L). Ye history kabhi auto-delete nahi hoti — boss ko poora past record nazar aata hai.</div>
+      <div class="scrollx">
+        <table class="tbl pf-tbl" id="rlzTable">
+          <thead><tr>
+            <th>Date</th><th class="l">Stock</th><th>Platform</th><th>Qty sold</th>
+            <th>Buy price</th><th>Sell price</th><th>Invested</th><th>Sold for</th><th>Realized P/L</th><th>%</th>
+            <th class="pf-actcol owner-only">Del</th>
+          </tr></thead>
+          <tbody id="rlzBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MONTHLY CLOSURE & REPORT -->
+    <section class="panel span2" id="mclosePanel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--accent)"></span>📅 Monthly Closure &amp; Report</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="mcMonth" class="mc-sel"></select>
+          <button class="btn sm primary" id="mcPdf">⬇ Download PDF</button>
+          <button class="btn sm" id="mcCsv">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="p-body"><div id="mcPreview"></div></div>
+    </section>
+
+    <!-- WITHDRAWAL / SALE TAX CALCULATOR -->
+    <section class="panel span2 owner-only" id="wdPanel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--up)"></span>💸 Withdrawal / Sale Tax Calculator</div>
+      </div>
+      <div class="p-body">
+        <div class="wd-grid">
+          <label>Broker<select id="wdBroker"><option>KTrade</option><option>Arif Habib (AHL)</option><option>Orbit Securities</option></select></label>
+          <label>Account title<input id="wdTitle" placeholder="Account holder name"></label>
+          <label>Account number<input id="wdAcct" placeholder="Broker account #"></label>
+          <label>Tax status<select id="wdFiler"><option value="1">Filer (ATL)</option><option value="0">Non-filer</option></select></label>
+        </div>
+        <div class="wd-grid">
+          <label>Symbol (optional)<input id="wdSym" placeholder="e.g. OGDC"></label>
+          <label>Shares to sell<input id="wdQty" type="number" min="0" placeholder="20"></label>
+          <label>Avg buy price<input id="wdBuy" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Sell price<input id="wdSell" type="number" min="0" step="0.01" placeholder="0.00"></label>
+        </div>
+        <details class="wd-more">
+          <summary>Rates (agar aapke broker ke alag hon to edit karein)</summary>
+          <div class="wd-grid" style="margin-top:10px">
+            <label>Brokerage %<input id="wdComm" type="number" step="0.01" value="0.15"></label>
+            <label>SST % (on commission)<input id="wdSst" type="number" step="0.5" value="15"></label>
+            <label>CDC + exchange % (of value)<input id="wdCdc" type="number" step="0.005" value="0.03"></label>
+            <label>CGT % — Filer<input id="wdCgtF" type="number" step="0.5" value="15"></label>
+            <label>CGT % — Non-filer<input id="wdCgtN" type="number" step="0.5" value="20"></label>
+          </div>
+        </details>
+        <div class="wd-out" id="wdOut"><div class="muted">Shares aur sell price daalein — breakdown yahan aayega.</div></div>
+        <div style="display:flex;gap:8px;margin-top:11px">
+          <button class="btn primary sm" id="wdPdf">⬇ Generate withdrawal PDF</button>
+        </div>
+        <p class="p-note" style="margin-top:9px">⚠️ Ye <b>estimate</b> hai. Government tax (CGT) sirf <b>munafe (gain)</b> par lagta hai aur share bechte waqt <b>NCCPL settlement par auto-deduct</b> hota hai — cash withdrawal par alag gov tax nahi. Actual charges/CGT apne broker/NCCPL se confirm karein.</p>
+      </div>
+    </section>
+
+    <!-- TRADE INSTRUCTION (BUY/SELL ORDER) -->
+    <section class="panel span2 owner-only" id="tiPanel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--accent)"></span>📝 Trade Instruction (Buy / Sell Order)</div>
+      </div>
+      <div class="p-body">
+        <div class="wd-grid">
+          <label>Broker<select id="tiBroker"><option>KTrade</option><option>Arif Habib (AHL)</option><option>Orbit Securities</option></select></label>
+          <label>Account title<input id="tiTitle" placeholder="Account holder name"></label>
+          <label>Account number<input id="tiAcct" placeholder="Broker account #"></label>
+          <label>Total budget (optional)<input id="tiBudget" type="number" min="0" placeholder="e.g. 20000000"></label>
+        </div>
+        <div class="wd-grid" style="grid-template-columns:0.7fr 1fr 0.8fr 1fr auto;align-items:end">
+          <label>Action<select id="tiAct"><option>BUY</option><option>SELL</option></select></label>
+          <label>Symbol<input id="tiSym" placeholder="e.g. MEBL"></label>
+          <label>Qty<input id="tiQty" type="number" min="0" placeholder="1000"></label>
+          <label>Price (blank = market)<input id="tiPrice" type="number" min="0" step="0.01" placeholder="market"></label>
+          <button class="btn primary sm" id="tiAdd" style="height:38px">+ Add line</button>
+        </div>
+        <div class="scrollx"><table class="tbl pf-tbl" id="tiTable" style="display:none">
+          <thead><tr><th>Action</th><th class="l">Symbol</th><th>Qty</th><th>Price</th><th>Approx value</th><th></th></tr></thead>
+          <tbody id="tiBody"></tbody>
+        </table></div>
+        <div class="empty" id="tiEmpty">Abhi koi order line nahi. Upar Action / Symbol / Qty daal kar <b>+ Add line</b> dabayein.</div>
+        <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)">Notes / instruction (optional)
+          <input id="tiNote" placeholder="e.g. Buy on dip as approved by management" style="width:100%;margin-top:5px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 11px;color:var(--text);font-size:14px"></label>
+        <div style="display:flex;gap:8px;margin-top:11px">
+          <button class="btn primary sm" id="tiPdf">⬇ Generate instruction PDF</button>
+          <button class="btn ghost sm" id="tiClear">Clear lines</button>
+        </div>
+        <p class="p-note" style="margin-top:9px">Boss "dip par buy karo" kahein to yahan order lines banayein → PDF nikaalein → boss se sign → broker (KTrade / AHL) ko de dein. Price blank = market order. Ye record/instruction ke liye hai — investment advice nahi.</p>
+      </div>
+    </section>
+
+    <!-- WATCHLIST -->
+    <section class="panel span2" style="display:none">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>Watchlist &mdash; All PSX / KSE100 / KMI30 / Banks</div>
+        <div class="tabs" id="wlTabs"></div>
+      </div>
+      <div class="p-body">
+        <div class="wl-controls">
+          <div class="search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+            <input id="wlSearch" placeholder="Search symbol ya company… (UBL, Meezan, cement)">
+          </div>
+          <button class="btn sm owner-only" id="editBtn">✎ Edit prices</button>
+          <button class="btn sm primary owner-only" id="bulkBtn">⇊ Bulk update</button>
+          <button class="btn sm ghost danger owner-only" id="resetPrices">Reset</button>
+        </div>
+        <div class="tbl-scroll scrollx">
+          <table class="tbl">
+            <thead><tr>
+              <th class="l">Symbol</th>
+              <th>Price (PKR)</th>
+              <th>Change</th>
+              <th>% Chg</th>
+              <th class="l">Chart</th>
+            </tr></thead>
+            <tbody id="wlBody"></tbody>
+          </table>
+        </div>
+        <div class="wl-foot">
+          <span class="p-note" id="wlCount"></span>
+          <span class="p-note">Green = up, Red = down. Price cell edit karne par change % auto recalc hota hai.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHART / TERMINAL -->
+    <section class="panel" style="display:none">
+      <div class="p-head"><div class="p-title blue"><span class="bar"></span>Charts &amp; Terminal</div></div>
+      <div class="p-body">
+        <div class="chart-row">
+          <select id="chartSym" style="flex:1;min-width:150px"></select>
+          <input class="txt" id="chartCustom" placeholder="ya symbol type karein" style="width:130px">
+        </div>
+        <div class="chart-links">
+          <a class="clink" id="lnkTV" target="_blank" rel="noopener"><b>📈 TradingView Chart</b><small>Advanced live chart + indicators</small></a>
+          <a class="clink" id="lnkTerm" target="_blank" rel="noopener"><b>🖥️ PSX Terminal (DPS)</b><small>Official live quote &amp; depth</small></a>
+          <a class="clink" id="lnkSA" target="_blank" rel="noopener"><b>🔎 Fundamentals</b><small>Financials, ratios, market cap</small></a>
+          <a class="clink" id="lnkKT" target="_blank" rel="noopener"><b>⚡ KTrade</b><small>Trade / place order (broker)</small></a>
+          <a class="clink" id="lnkAHL" target="_blank" rel="noopener" href="https://web.ahletrade.com/"><b>🏦 Arif Habib (AHL)</b><small>AHL eTrade — web trading (broker)</small></a>
+        </div>
+        <p class="p-note" style="margin-top:11px">Symbol select ya type karein, phir koi bhi card khulega us stock ke liye. Live chart embed sandbox mein block hota hai, is liye ye seedha official/TradingView par kholte hain.</p>
+      </div>
+    </section>
+
+    <!-- CALCULATOR -->
+    <section class="panel" style="display:none">
+      <div class="p-head">
+        <div class="p-title gold"><span class="bar"></span>Calculator</div>
+        <div class="calc-tabs">
+          <div class="tab active" data-calc="trade">Trade</div>
+          <div class="tab" data-calc="plain">Basic</div>
+        </div>
+      </div>
+      <div class="p-body">
+        <!-- Trade calc -->
+        <div id="calcTrade">
+          <div class="calc-grid">
+            <div class="field"><label>Shares (qty)</label><input type="number" id="cQty" value="100" min="0"></div>
+            <div class="field"><label>Price / share</label><input type="number" id="cPrice" value="100" min="0" step="0.01"></div>
+            <div class="field"><label>Brokerage %</label><input type="number" id="cBrok" value="0.15" min="0" step="0.01"></div>
+            <div class="field"><label>Side</label>
+              <select id="cSide" style="width:100%"><option value="buy">Buy</option><option value="sell">Sell</option></select>
+            </div>
+          </div>
+          <div class="calc-out" id="tradeOut"></div>
+          <p class="p-note" style="margin-top:9px">Estimate hai — brokerage har broker ka alag, plus CDC/SECP fee &amp; taxes broker slip par confirm karein.</p>
+        </div>
+        <!-- Plain calc -->
+        <div id="calcPlain" style="display:none">
+          <div class="pcalc">
+            <div class="pcalc-disp" id="pDisp">0</div>
+            <div class="keys" id="pKeys"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- UPCOMING / NEW LISTINGS -->
+    <section class="panel span2">
+      <div class="p-head"><div class="p-title gold"><span class="bar"></span>New &amp; Upcoming Listings</div></div>
+      <div class="p-body">
+        <div id="ipoList" class="twocol"></div>
+        <div class="add-row" style="margin-top:14px">
+          <a class="btn sm primary" href="https://dps.psx.com.pk/announcements/psx" target="_blank" rel="noopener" style="text-align:center;flex:1">All official IPO announcements ↗</a>
+        </div>
+        <p class="p-note" style="margin-top:9px">Sep 2026 tak ki listings. Dates/status change hote hain — naye IPOs ke liye upar wale <b>official IPO announcements</b> button se live confirm karein.</p>
+      </div>
+    </section>
+
+    <!-- INDICES -->
+    <section class="panel span2">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>PSX Indices <span class="live-tag" id="idxLiveTag"></span></div>
+        <span class="p-note" id="idxNote">Robot se auto-update</span>
+      </div>
+      <div class="p-body">
+        <div class="idx-grid" id="idxGrid"><span class="p-note">Indices robot chalne par yahan aa jayenge (KSE100, KMI30, ALLSHR…).</span></div>
+      </div>
+    </section>
+
+    <!-- DIP ALERTS -->
+    <section class="panel span2">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--down)"></span>Dip Alerts</div>
+        <div class="tabs" id="dipTabs">
+          <div class="tab active" data-dip="20">20%+</div>
+          <div class="tab" data-dip="hold">My holdings</div>
+        </div>
+      </div>
+      <div class="p-body">
+        <div class="scrollx"><div id="dipList"></div></div>
+        <p class="p-note" style="margin-top:10px" id="dipNote">Stocks jo apne <b>recent high</b> se neeche gir chuke hain. High robot track karta hai (jaise jaise chalega, 52-week ke qareeb hota jayega).</p>
+      </div>
+    </section>
+
+    <!-- MOVERS -->
+    <section class="panel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>Movers (snapshot)</div>
+        <div class="tabs" id="mvTabs">
+          <div class="tab active" data-mv="gain">Gainers</div>
+          <div class="tab" data-mv="lose">Losers</div>
+        </div>
+      </div>
+      <div class="p-body">
+        <div id="moversList"></div>
+        <p class="p-note" style="margin-top:10px">Snapshot change % par based. Watchlist mein prices update karenge to ye bhi update ho jayega. Live gainers/losers ke liye niche "PSX / Sarmaaya" khol lein.</p>
+      </div>
+    </section>
+
+    <!-- MORE DATA SOURCES -->
+    <section class="panel" style="display:none">
+      <div class="p-head"><div class="p-title blue"><span class="bar"></span>More Data &amp; Screeners</div></div>
+      <div class="p-body">
+        <div id="dataList"></div>
+        <p class="p-note" style="margin-top:11px">Ye sab jaga se aap stocks dekh, screen aur compare kar sakte hain — prices, ratios, sectors, gainers/losers sab.</p>
+      </div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="panel" style="display:none">
+      <div class="p-head"><div class="p-title blue"><span class="bar"></span>Market News</div></div>
+      <div class="p-body">
+        <div id="newsList"></div>
+        <p class="p-note" style="margin-top:11px">Ye trusted PSX news portals hain — click par latest market updates khulte hain.</p>
+      </div>
+    </section>
+
+    <!-- DAILY MARKET NOTE -->
+    <section class="panel" id="mnPanel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--accent)"></span>📰 Daily Market Note — Kyun oopar/neeche?</div>
+      </div>
+      <div class="p-body">
+        <div id="mnKse" class="mn-kse"></div>
+        <div id="mnNews"></div>
+        <div id="mnList"></div>
+        <div class="add-row owner-only" style="grid-template-columns:1fr auto">
+          <input id="mnText" placeholder="Aaj market kyun oopar/neeche? (1 line)">
+          <button class="btn primary sm" id="mnAdd">Save note</button>
+        </div>
+        <p class="p-note" style="margin-top:9px">Rozana market band hone par ek line likhein — KSE-100 change auto aata hai, <b>wajah aap likhein</b> (jaise "US-Iran tension + profit-taking se gira"). Boss ko bhi dikhega, aur pichhle dinon ki history bhi rahegi.</p>
+      </div>
+    </section>
+
+    <!-- WHATSAPP -->
+    <section class="panel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar"></span>WhatsApp — Morning Updates</div>
+      </div>
+      <div class="p-body">
+        <div id="waList"></div>
+        <div class="add-row owner-only">
+          <input id="waName" placeholder="Channel/Group ka naam">
+          <input id="waUrl" placeholder="WhatsApp invite/channel link">
+          <button class="btn primary sm" id="waAdd">Add</button>
+        </div>
+        <p class="p-note" style="margin-top:9px">Jo channels aap follow karte hain unke links yahan save karein — roz subah ek jaga se khol lein.</p>
+      </div>
+    </section>
+
+    <!-- YOUTUBE -->
+    <section class="panel">
+      <div class="p-head">
+        <div class="p-title"><span class="bar" style="background:var(--down)"></span>YouTube — Daily PSX Updates</div>
+      </div>
+      <div class="p-body">
+        <div id="ytList"></div>
+        <div class="add-row owner-only">
+          <input id="ytName" placeholder="Channel ka naam">
+          <input id="ytUrl" placeholder="YouTube link paste karein">
+          <button class="btn primary sm" id="ytAdd">Add</button>
+        </div>
+        <p class="p-note" style="margin-top:9px">Apne pasand ke channels yahan add karein — save ho jayenge.</p>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footer">
+    Data snapshot: late June 2026 &middot; T+1 settlement PSX par active (Feb 2026 se).<br>
+    Sirf informational tool — koi investment/financial advice nahi. Trade se pehle apna research aur licensed broker/advisor consult karein.
+  </div>
+</div>
+
+<!-- Firebase (loads only when hosted online; in-app preview falls back to local) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<!-- PIN modal (masked) -->
+<div class="modal-ov" id="pinModal">
+  <div class="modal">
+    <div class="modal-title">🔒 Editing unlock</div>
+    <div class="modal-sub">Apna PIN daalein. Ye chhupa rehta hai.</div>
+    <div class="pin-field">
+      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="••••••" spellcheck="false">
+      <button type="button" class="pin-eye" id="pinEye" title="Show/Hide">👁</button>
+    </div>
+    <div class="pin-err" id="pinErr"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" id="pinCancel">Cancel</button>
+      <button class="btn primary" id="pinOk">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk price update modal -->
+<div class="modal-ov" id="bulkModal">
+  <div class="modal modal-lg">
+    <div class="modal-title">⇊ Bulk update prices</div>
+    <div class="modal-sub">Har line par <b>SYMBOL PRICE</b> likhein (ya paste karein). Optional: teesra number change%.<br>Misal: <code>UBL 484.99</code> &nbsp;·&nbsp; <code>OGDC 345.43 1.5</code> &nbsp;·&nbsp; <code>FFC, 576.72</code></div>
+    <textarea id="bulkText" class="bulk-ta" placeholder="UBL 484.99&#10;OGDC 345.43&#10;FFC 576.72&#10;MCB 427.11"></textarea>
+    <div class="bulk-preview" id="bulkPreview"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" id="bulkCancel">Cancel</button>
+      <button class="btn primary" id="bulkApply">Apply prices</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="sellModal">
+  <div class="modal">
+    <div class="modal-title">₨↓ Sell / Book position</div>
+    <div class="modal-sub" id="sellInfo"></div>
+    <div class="sell-grid">
+      <label>Qty to sell<input type="number" id="sellQty" min="1" step="1"></label>
+      <label>Sell price (per share)<input type="number" id="sellPrice" min="0" step="0.01"></label>
+    </div>
+    <div class="sell-preview" id="sellPreview"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" id="sellCancel">Cancel</button>
+      <button class="btn primary" id="sellConfirm">✓ Confirm sell</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="rlzModal">
+  <div class="modal">
+    <div class="modal-title" id="rlzModalTitle">✎ Edit sell record</div>
+    <div class="sell-grid" style="grid-template-columns:1fr 1fr">
+      <label>Date<input type="date" id="rlzDate"></label>
+      <label>Symbol<input type="text" id="rlzSym" placeholder="e.g. OGDC"></label>
+      <label>Platform<input type="text" id="rlzPlat" placeholder="KTrade / Arif Habib (AHL)"></label>
+      <label>Qty<input type="number" id="rlzQty" min="0" step="1"></label>
+      <label>Buy cost (per share)<input type="number" id="rlzCost" min="0" step="0.0001"></label>
+      <label>Sell price (per share)<input type="number" id="rlzSell" min="0" step="0.0001"></label>
+    </div>
+    <div class="sell-preview" id="rlzPreview"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" id="rlzCancel">Cancel</button>
+      <button class="btn primary" id="rlzSave">✓ Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================ FIREBASE CONFIG ============================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCKgRUYvRkIYKixL3PjxwuBjghqU6ULrbc",
+  authDomain: "psx-dashboard-2b391.firebaseapp.com",
+  databaseURL: "https://psx-dashboard-2b391-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "psx-dashboard-2b391",
+  storageBucket: "psx-dashboard-2b391.firebasestorage.app",
+  messagingSenderId: "481452462694",
+  appId: "1:481452462694:web:f2ad12a4e542ec02fa53a7"
+};
+// Editing unlock code (change this to whatever you like):
+const OWNER_PIN = "psx2026";
+</script>
+<script>
+/* ============================ DATA ============================ */
+// Snapshot prices (PKR) & % change — late June 2026, sorted by market cap.
+// cat flags: t20 (top 20 by mcap), bank, general
+const STOCKS = [
+  {s:'OGDC',   n:'Oil & Gas Development Co',        p:337.00, c:0.30, t20:1},
+  {s:'UBL',    n:'United Bank Limited',             p:397.08, c:-0.78, t20:1, bank:1},
+  {s:'MEBL',   n:'Meezan Bank Limited',             p:495.89, c: 1.13, t20:1, bank:1},
+  {s:'FFC',    n:'Fauji Fertilizer Company',        p:553.58, c:-0.23, t20:1},
+  {s:'MARI',   n:'Mari Energies Limited',           p:650.27, c:-0.24, t20:1},
+  {s:'LUCK',   n:'Lucky Cement Limited',            p:429.35, c:-0.65, t20:1},
+  {s:'PPL',    n:'Pakistan Petroleum Limited',      p:224.06, c:-0.55, t20:1},
+  {s:'MCB',    n:'MCB Bank Limited',                p:397.20, c:-1.61, t20:1, bank:1},
+  {s:'HBL',    n:'Habib Bank Limited',              p:281.57, c:-1.14, t20:1, bank:1},
+  {s:'NBP',    n:'National Bank of Pakistan',       p:183.62, c:-0.75, t20:1, bank:1},
+  {s:'NESTLE', n:'Nestlé Pakistan Limited',         p:7703.28,c: 0.56, t20:1},
+  {s:'PAKT',   n:'Pakistan Tobacco Company',        p:1316.02,c:-0.95, t20:1},
+  {s:'PTC',    n:'Pakistan Telecommunication Co',   p:63.99,  c:-2.25, t20:1},
+  {s:'ENGROH', n:'Engro Holdings Limited',          p:292.90, c:-0.12, t20:1},
+  {s:'FATIMA', n:'Fatima Fertilizer Company',       p:140.69, c:-0.36, t20:1},
+  {s:'COLG',   n:'Colgate-Palmolive Pakistan',      p:1165.05,c: 0.44, t20:1},
+  {s:'HUBC',   n:'The Hub Power Company',           p:213.46, c:-0.69, t20:1},
+  {s:'BWCL',   n:'Bestway Cement Limited',          p:450.04, c:-0.41, t20:1},
+  {s:'EFERT',  n:'Engro Fertilizers Limited',       p:194.39, c:0.42, t20:1},
+  {s:'SCBPL',  n:'Standard Chartered Bank Pak',     p:65.70,  c:-0.44, t20:1, bank:1},
+  // more banks
+  {s:'ABL',    n:'Allied Bank Limited',             p:177.87, c:-1.62, bank:1},
+  {s:'BAHL',   n:'Bank AL Habib Limited',           p:166.04, c:-2.54, bank:1},
+  {s:'BAFL',   n:'Bank Alfalah Limited',            p:57.97,  c:-0.45, bank:1},
+  {s:'AKBL',   n:'Askari Bank Limited',             p:95.33,  c:-2.35, bank:1},
+  {s:'FABL',   n:'Faysal Bank Limited',             p:88.72,  c:-0.10, bank:1},
+  {s:'HMB',    n:'Habib Metropolitan Bank',         p:114.41, c:-1.46, bank:1},
+  {s:'BOP',    n:'The Bank of Punjab',              p:33.67,  c: 0.21, bank:1},
+  {s:'BIPL',   n:'BankIslami Pakistan',             p:25.47,  c:-0.35, bank:1},
+  {s:'JSBL',   n:'JS Bank Limited',                 p:12.55,  c:-0.95, bank:1},
+  {s:'SNBL',   n:'Soneri Bank Limited',             p:20.01,  c: 0.50, bank:1},
+  {s:'BOK',    n:'The Bank of Khyber',              p:33.06,  c: 1.38, bank:1},
+  {s:'SBL',    n:'Samba Bank Limited',              p:9.69,   c: 0.62, bank:1},
+  {s:'BML',    n:'Bank Makramah Limited',           p:63.88,  c:-1.48, bank:1},
+  // general trade (popular / active)
+  {s:'PSO',    n:'Pakistan State Oil',              p:347.14, c:-0.70, general:1},
+  {s:'KEL',    n:'K-Electric Limited',              p:7.86,   c:-1.38, general:1},
+  {s:'SYS',    n:'Systems Limited',                 p:146.46, c:-0.85, general:1},
+  {s:'TRG',    n:'TRG Pakistan Limited',            p:70.98,  c:-0.96, general:1},
+  {s:'NETSOL', n:'Netsol Technologies',             p:128.62, c:-1.46, general:1},
+  {s:'FCCL',   n:'Fauji Cement Company',            p:52.27,  c:-1.21, general:1},
+  {s:'DGKC',   n:'D.G. Khan Cement',                p:193.46, c:-1.25, general:1},
+  {s:'MLCF',   n:'Maple Leaf Cement',               p:85.60,  c:-0.48, general:1},
+  {s:'SNGP',   n:'Sui Northern Gas Pipelines',      p:100.08, c:-0.87, general:1},
+  {s:'SSGC',   n:'Sui Southern Gas Company',        p:26.60,  c:-0.60, general:1},
+  {s:'PRL',    n:'Pakistan Refinery Limited',       p:34.62,  c: 0.70, general:1},
+  {s:'CNERGY', n:'Cnergyico PK Limited',            p:8.14,   c:-1.21, general:1},
+  {s:'PIBTL',  n:'Pak Intl Bulk Terminal',          p:17.04,  c:-1.62, general:1},
+  {s:'PAEL',   n:'Pak Elektron Limited',            p:40.27,  c: 0.15, general:1},
+  {s:'AIRLINK',n:'Air Link Communication',          p:154.73, c:-0.73, general:1},
+  {s:'UNITY',  n:'Unity Foods Limited',             p:11.59,  c:-0.17, general:1},
+  {s:'ISL',    n:'International Steels',             p:85.32,  c: 9.58, general:1},
+  {s:'MUGHAL', n:'Mughal Iron & Steel',             p:80.50,  c: 3.72, general:1},
+  {s:'ASTL',   n:'Amreli Steels Limited',           p:16.80,  c: 3.00, general:1},
+  {s:'WTL',    n:'WorldCall Telecom',               p:1.26,   c:-1.56, general:1},
+  {s:'TPLP',   n:'TPL Properties Limited',          p:11.42,  c: 0.97, general:1},
+  {s:'CPHL',   n:'Citi Pharma Limited',             p:76.58,  c:-1.11, general:1},
+  {s:'ILP',    n:'Interloop Limited',               p:106.04, c:0, general:1},
+  {s:'NML',    n:'Nishat Mills Limited',            p:163.67, c:0, general:1},
+  {s:'JVDC',   n:'Javedan Corporation Ltd',         p:157.29, c:0, general:1},
+  {s:'WAVESAPP',n:'Waves Home Appliances Ltd',      p:8.87,   c:0, general:1}
+];
+
+// New & upcoming listings (2026 H1, from SECP/PSX)
+const IPOS = [
+  {name:'SE Fruits & Vegetables (SEFV)', sec:'Fruits & veg · book building · floor Rs40 (max Rs64)', status:'up', tag:'UPCOMING'},
+  {name:'LSE SPAC-II',                sec:'SPAC · book building complete',        status:'done',   tag:'RECENT'},
+  {name:'Tasdeeq Information Services', sec:'Info services · newly listed', status:'done', tag:'LISTED'},
+  {name:'Service Long March Tyres (SLM)', sec:'Auto tyres · Rs7.77bn — largest ever', status:'done', tag:'LISTED'},
+  {name:'Sitara Petroleum (SPSL)',    sec:'Petroleum · subscribed in 8 min', status:'done', tag:'LISTED'},
+  {name:'Ghani Dairies (GDL)',        sec:'Dairy · 1st listed corporate dairy', status:'done', tag:'LISTED'},
+  {name:'Pak-Qatar General Takaful',  sec:'Islamic non-life insurance · 21x demand', status:'done', tag:'LISTED'},
+  {name:'Wahdat Poultry (WAHDAT)',    sec:'Poultry · ~Rs1bn raised',     status:'done', tag:'LISTED'},
+  {name:'Signature Residency REIT',   sec:'Real estate · residential REIT', status:'done', tag:'LISTED'},
+  {name:'JS Rental REIT (JSRR)',      sec:'Real estate · rental REIT',   status:'done', tag:'LISTED'},
+  {name:'LSE SPAC-I',                 sec:'Pakistan\u2019s first SPAC',  status:'done', tag:'LISTED'}
+];
+
+const NEWS = [
+  {name:'Mettis Global',      sec:'Fast market news & IPO coverage', url:'https://mettisglobal.news/'},
+  {name:'Business Recorder',  sec:'Business & finance daily',        url:'https://www.brecorder.com/business-finance'},
+  {name:'PSX Announcements',  sec:'Official corporate announcements', url:'https://dps.psx.com.pk/announcements/psx'},
+  {name:'The Express Tribune',sec:'Markets section',                 url:'https://tribune.com.pk/business'},
+  {name:'PKFinance',          sec:'PSX news aggregator',             url:'https://pkfinance.info/news/'},
+  {name:'PSX Market Summary', sec:'Daily gainers / losers / volume', url:'https://dps.psx.com.pk/'}
+];
+
+// Seed portfolio — user's actual holdings from BOTH brokers. cost = Cost/Unit, cur = market current, platform = broker
+const PF_SEED = [
+  // ---- KTrade ----
+  {s:'ENGROH',qty:1200,cost:292.0029,cur:292.51,pf:'KTrade'},
+  {s:'FCCL', qty:3385,cost:59.1519, cur:58.61, pf:'KTrade'},
+  {s:'FFC',  qty:1140,cost:570.4423,cur:576.72,pf:'KTrade'},
+  {s:'HUBC', qty:2150,cost:232.8910,cur:232.55,pf:'KTrade'},
+  {s:'ILP',  qty:478, cost:104.6402,cur:106.04,pf:'KTrade'},
+  {s:'LUCK', qty:849, cost:471.7103,cur:480.03,pf:'KTrade'},
+  {s:'MCB',  qty:360, cost:414.7041,cur:427.11,pf:'KTrade'},
+  {s:'MEBL', qty:910, cost:545.0594,cur:552.41,pf:'KTrade'},
+  {s:'NBP',  qty:1720,cost:203.1498,cur:208.80,pf:'KTrade'},
+  {s:'NML',  qty:312, cost:160.0128,cur:163.67,pf:'KTrade'},
+  {s:'OGDC', qty:1799,cost:334.0652,cur:345.43,pf:'KTrade'},
+  {s:'SYS',  qty:1672,cost:149.7448,cur:149.04,pf:'KTrade'},
+  {s:'UBL',  qty:1185,cost:464.2996,cur:484.99,pf:'KTrade'},
+  // ---- Arif Habib (AHL) ----
+  {s:'BAFL', qty:17200,cost:57.9157, cur:61.64, pf:'Arif Habib (AHL)'},
+  {s:'FFC',  qty:2700, cost:522.6435,cur:576.72,pf:'Arif Habib (AHL)'},
+  {s:'JVDC', qty:600,  cost:151.2655,cur:157.29,pf:'Arif Habib (AHL)'},
+  {s:'MCB',  qty:700,  cost:406.6452,cur:427.11,pf:'Arif Habib (AHL)'},
+  {s:'NBP',  qty:4000, cost:246.4294,cur:208.80,pf:'Arif Habib (AHL)'},
+  {s:'OGDC', qty:3700, cost:283.9401,cur:345.43,pf:'Arif Habib (AHL)'},
+  {s:'PPL',  qty:4700, cost:212.0245,cur:248.71,pf:'Arif Habib (AHL)'},
+  {s:'TPLP', qty:18000,cost:11.1473, cur:11.64, pf:'Arif Habib (AHL)'},
+  {s:'WAVESAPP',qty:10500,cost:9.5625,cur:8.87, pf:'Arif Habib (AHL)'}
+];
+
+// Seed YouTube (starter) — user apne channels add kar sakta hai
+const YT_SEED = [
+  {name:'Abdul Rehman Najam', url:'https://www.youtube.com/@AbdulRehmanNajamOfficial'},
+  {name:'Pakistan Stock Exchange (Official)', url:'https://www.youtube.com/c/PakistanStockExchangeLimited'}
+];
+const WA_SEED = [
+  {name:'PSX WhatsApp Channel', url:'https://whatsapp.com/channel/0029VaqxGNBCMY0FbZSQhj0S'}
+];
+
+const QUICKLINKS = [
+  {t:'PSX Terminal (DPS)', s:'Live quotes', u:'https://dps.psx.com.pk/', c:'var(--up)'},
+  {t:'PSX Official',       s:'psx.com.pk',  u:'https://www.psx.com.pk/', c:'var(--up)'},
+  {t:'TradingView',        s:'Charts',      u:'https://www.tradingview.com/markets/stocks-pakistan/', c:'var(--blue)'},
+  {t:'KTrade',             s:'Broker app',  u:'https://ktrade.com.pk/', c:'var(--gold)'},
+  {t:'Arif Habib (AHL)',   s:'Broker · eTrade', u:'https://web.ahletrade.com/', c:'var(--gold)'},
+  {t:'Market Summary',     s:'Gainers/Losers', u:'https://dps.psx.com.pk/', c:'var(--blue)'},
+  {t:'IPO Announcements',  s:'New listings', u:'https://dps.psx.com.pk/announcements/psx', c:'var(--gold)'}
+];
+
+/* ============================ STORAGE (Firebase + local fallback) ============================ */
+let useFB=false, db=null;
+try{
+  if(typeof firebase!=='undefined' && FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    useFB = true;
+  }
+}catch(e){ useFB=false; }
+
+const FB_ROOT='psxShared';
+const fbKey = k => 'k_'+k.replace(/[^A-Za-z0-9]/g,'_');
+function hasLocal(){ try{ return !!window.storage; }catch(e){ return false; } }
+
+const store = {
+  async get(k, def){
+    if(useFB){
+      try{ const s=await db.ref(FB_ROOT+'/'+fbKey(k)).once('value'); const v=s.val(); return v==null?def:v; }catch(e){}
+    }
+    if(hasLocal()){ try{ const r=await window.storage.get(k); return r&&r.value!=null?JSON.parse(r.value):def; }catch(e){} }
+    try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):def; }catch(e){}
+    return def;
+  },
+  async set(k, v){
+    if(useFB){ try{ await db.ref(FB_ROOT+'/'+fbKey(k)).set(v); }catch(e){} }
+    if(hasLocal()){ try{ await window.storage.set(k, JSON.stringify(v)); return; }catch(e){} }
+    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+  },
+  async del(k){
+    if(useFB){ try{ await db.ref(FB_ROOT+'/'+fbKey(k)).remove(); }catch(e){} }
+    if(hasLocal()){ try{ await window.storage.delete(k); return; }catch(e){} }
+    try{ localStorage.removeItem(k); }catch(e){}
+  },
+  sub(k, cb){ if(useFB){ try{ db.ref(FB_ROOT+'/'+fbKey(k)).on('value', s=>cb(s.val())); }catch(e){} } }
+};
+// Firebase turns arrays into objects sometimes — coerce back to array.
+function toArr(v){ return Array.isArray(v)?v : (v&&typeof v==='object'?Object.values(v):[]); }
+
+let overrides = {};    // {SYM:{p, c}}
+let meta = {};         // {SYM:{n:name, s:sector}} from robot (psx:meta)
+let navs = {};         // {SYM:nav} mutual-fund NAVs from robot (psx:navs)
+let portfolio = [];    // [{s,qty,cost,cur}]
+let realized = [];     // [{date,s,platform,qty,cost,sell,pnl}]
+let ytLinks = [], waLinks = [];
+let canEdit = false;   // view-only by default; unlocked with PIN
+
+/* ============================ HELPERS ============================ */
+const $ = id => document.getElementById(id);
+const fmt = (n, d=2) => Number(n).toLocaleString('en-PK',{minimumFractionDigits:d, maxFractionDigits:d, maximumFractionDigits:d});
+const rs  = n => 'Rs ' + Number(n).toLocaleString('en-PK',{maximumFractionDigits:0});
+const cls = c => c>0?'up':(c<0?'down':'flat');
+const arw = c => c>0?'\u25B2':(c<0?'\u25BC':'\u2500');
+function stock(sym){ return STOCKS.find(x=>x.s===sym); }
+function curPrice(sym){
+  if(overrides[sym] && overrides[sym].p!=null) return overrides[sym].p;
+  const s = stock(sym); return (s && s.p!=null) ? s.p : null;
+}
+function nameOf(sym){
+  if(meta[sym] && meta[sym].n) return meta[sym].n;
+  const s=stock(sym); if(s && s.n && s.n!==sym) return s.n;
+  return '';
+}
+function sectorOf(sym){ return (meta[sym] && meta[sym].s) ? meta[sym].s : ''; }
+function descOf(sym){ const n=nameOf(sym), sec=sectorOf(sym); if(n && sec) return n+' · '+sec; return n || sec || sym; }
+function curChg(sym){
+  if(overrides[sym] && overrides[sym].c!=null) return overrides[sym].c;
+  const s = stock(sym); return (s && s.c!=null) ? s.c : 0;
+}
+function tvSym(sym){ return 'PSX%3A'+sym; }
+
+/* ============================ TICKER ============================ */
+function buildTicker(){
+  const items = STOCKS.filter(x=>x.t20||x.general).slice(0,26);
+  const html = items.map(x=>{
+    const c=curChg(x.s), p=curPrice(x.s);
+    return `<span class="tick-item"><span class="tick-sym">${x.s}</span><span class="tick-px">${fmt(p)}</span><span class="tick-chg ${cls(c)}">${arw(c)}${Math.abs(c).toFixed(2)}%</span></span>`;
+  }).join('');
+  $('ticker').innerHTML = html + html; // duplicate for seamless loop
+}
+
+/* ============================ QUICK LINKS ============================ */
+$('quick').innerHTML = QUICKLINKS.map(q=>
+  `<a class="qbtn" href="${q.u}" target="_blank" rel="noopener"><span class="ic" style="background:var(--accent)"></span>${q.t} <small>${q.s}</small></a>`
+).join('');
+
+/* ============================ WATCHLIST ============================ */
+let wlTab='all', editing=false, wlQuery='';
+function idxHas(x,name){ return (x.idx||'').split(',').map(s=>s.trim()).includes(name); }
+const TABS=[['all','All'],['kse100','KSE100'],['kmi30','KMI30'],['bank','Banks'],['hold','My Holdings']];
+$('wlTabs').innerHTML = TABS.map((t,i)=>`<div class="tab ${i===0?'active':''}" data-t="${t[0]}">${t[1]}</div>`).join('');
+$('wlTabs').addEventListener('click',e=>{
+  const el=e.target.closest('.tab'); if(!el)return;
+  wlTab=el.dataset.t;
+  document.querySelectorAll('#wlTabs .tab').forEach(x=>x.classList.toggle('active',x===el));
+  renderWatchlist();
+});
+$('wlSearch').addEventListener('input',e=>{ wlQuery=e.target.value.trim().toLowerCase(); renderWatchlist(); });
+$('editBtn').addEventListener('click',()=>{ editing=!editing; $('editBtn').textContent = editing?'✓ Done':'✎ Edit prices'; $('editBtn').classList.toggle('primary',editing); renderWatchlist(); });
+$('resetPrices').addEventListener('click',async()=>{ overrides={}; await store.del('psx:overrides'); renderWatchlist(); buildTicker(); renderPortfolio(); renderMovers(); });
+
+/* ---- Bulk price update ---- */
+function parseBulk(text){
+  const out=[], bad=[];
+  text.split(/\n/).forEach(line=>{
+    const raw=line.trim(); if(!raw) return;
+    const toks=raw.split(/[\s,;\t]+/).filter(Boolean);
+    const sym=(toks.find(t=>/^[A-Za-z][A-Za-z0-9]{1,9}$/.test(t))||'').toUpperCase();
+    const nums=toks.filter(t=>/^-?\d[\d,]*\.?\d*$/.test(t)).map(t=>parseFloat(t.replace(/,/g,'')));
+    if(sym && nums.length){
+      out.push({s:sym, p:nums[0], c: nums.length>1?nums[1]:null});
+    } else if(raw){ bad.push(raw); }
+  });
+  return {out, bad};
+}
+function renderBulkPreview(){
+  const {out,bad}=parseBulk($('bulkText').value);
+  let html = out.map(r=>`<span class="ok">✓ ${r.s} → ${fmt(r.p)}${r.c!=null?` (${r.c>0?'+':''}${r.c}%)`:''}</span>`).join('<br>');
+  if(bad.length) html += (html?'<br>':'')+bad.map(b=>`<span class="bad">✕ samajh nahi aaya: ${b}</span>`).join('<br>');
+  $('bulkPreview').innerHTML = html || 'Yahan parse preview aayega…';
+  return out;
+}
+$('bulkBtn').addEventListener('click',()=>{ if(!canEdit)return; $('bulkText').value=''; $('bulkPreview').innerHTML='Yahan parse preview aayega…'; $('bulkModal').classList.add('show'); setTimeout(()=>$('bulkText').focus(),50); });
+$('bulkText').addEventListener('input',renderBulkPreview);
+$('bulkCancel').addEventListener('click',()=>$('bulkModal').classList.remove('show'));
+$('bulkModal').addEventListener('click',e=>{ if(e.target===$('bulkModal'))$('bulkModal').classList.remove('show'); });
+$('bulkApply').addEventListener('click',async()=>{
+  if(!canEdit)return;
+  const out=parseBulk($('bulkText').value).out;
+  if(!out.length){ return; }
+  out.forEach(r=>{
+    const prevC = overrides[r.s]?overrides[r.s].c:(stock(r.s)?stock(r.s).c:0);
+    overrides[r.s]={ p:r.p, c: r.c!=null?r.c:(prevC||0) };
+  });
+  await store.set('psx:overrides',overrides);
+  $('bulkModal').classList.remove('show');
+  renderWatchlist(); buildTicker(); renderMovers(); renderPortfolio();
+  pfStatus(`✓ ${out.length} stocks ki price update ho gayi.`);
+});
+
+function filteredStocks(){
+  const held = new Set(portfolio.map(p=>p.s));
+  return STOCKS.filter(x=>{
+    if(curPrice(x.s)==null) return false;
+    if(wlTab==='kse100' && !idxHas(x,'KSE100')) return false;
+    if(wlTab==='kmi30' && !idxHas(x,'KMI30')) return false;
+    if(wlTab==='bank' && !x.bank) return false;
+    if(wlTab==='hold' && !held.has(x.s)) return false;
+    if(wlQuery && !(x.s.toLowerCase().includes(wlQuery)||(x.n||'').toLowerCase().includes(wlQuery)||nameOf(x.s).toLowerCase().includes(wlQuery))) return false;
+    return true;
+  });
+}
+function renderWatchlist(){
+  const rows = filteredStocks().map(x=>{
+    const p=curPrice(x.s), c=curChg(x.s);
+    const prevClose = p/(1+c/100);
+    const chgAbs = p-prevClose;
+    const edited = overrides[x.s]?' •':'';
+    const badges = (x.bank?'<span class="badge bank">BANK</span>':'')
+      + (idxHas(x,'KSE100')?'<span class="badge t20">KSE100</span>':'')
+      + (idxHas(x,'KMI30')?'<span class="badge kmi">KMI30</span>':'');
+    const priceCell = editing
+      ? `<input class="px-in" type="number" step="0.01" value="${p.toFixed(2)}" data-sym="${x.s}">`
+      : `<span>${fmt(p)}${edited}</span>`;
+    return `<tr>
+      <td class="l"><div class="sym"><b>${x.s}${badges}</b><span>${nameOf(x.s)||x.s}</span></div></td>
+      <td>${priceCell}</td>
+      <td class="${cls(c)}">${c>0?'+':''}${chgAbs.toFixed(2)}</td>
+      <td class="${cls(c)}">${arw(c)} ${Math.abs(c).toFixed(2)}%</td>
+      <td class="l"><a class="chartlink" href="https://www.tradingview.com/symbols/${'PSX-'+x.s}/" target="_blank" rel="noopener">chart ↗</a></td>
+    </tr>`;
+  }).join('');
+  $('wlBody').innerHTML = rows || `<tr><td colspan="5" class="empty">Koi result nahi mila "${wlQuery}" ke liye.</td></tr>`;
+  $('wlCount').textContent = filteredStocks().length + ' stocks';
+  if(editing){
+    document.querySelectorAll('.px-in').forEach(inp=>{
+      inp.addEventListener('change',async()=>{
+        const sym=inp.dataset.sym, np=parseFloat(inp.value);
+        if(isNaN(np)||np<=0) return;
+        const cc=curChg(sym), cur=curPrice(sym)||np;
+        const prevClose = cur/(1+cc/100);
+        const nc = prevClose>0 ? ((np-prevClose)/prevClose)*100 : 0;
+        overrides[sym]={p:np, c:+nc.toFixed(2)};
+        await store.set('psx:overrides',overrides);
+        buildTicker(); renderPortfolio(); populateChartSelect(); renderMovers(); renderDips();
+      });
+    });
+  }
+}
+
+/* ============================ CHART PANEL ============================ */
+function populateChartSelect(){
+  const opts = STOCKS.map(x=>`<option value="${x.s}">${x.s} — ${x.n}</option>`).join('');
+  const cur = $('chartSym').value;
+  $('chartSym').innerHTML = opts;
+  if(cur) $('chartSym').value=cur;
+}
+function updateChartLinks(){
+  const sym = ($('chartCustom').value.trim().toUpperCase()) || $('chartSym').value || 'UBL';
+  $('lnkTV').href   = 'https://www.tradingview.com/chart/?symbol=PSX%3A'+encodeURIComponent(sym);
+  $('lnkTerm').href = 'https://dps.psx.com.pk/company/'+encodeURIComponent(sym);
+  $('lnkSA').href   = 'https://stockanalysis.com/quote/psx/'+encodeURIComponent(sym)+'/';
+  $('lnkKT').href   = 'https://ktrade.com.pk/';
+}
+$('chartSym').addEventListener('change',()=>{ $('chartCustom').value=''; updateChartLinks(); });
+$('chartCustom').addEventListener('input',updateChartLinks);
+
+/* ============================ CALCULATOR — trade ============================ */
+function calcTrade(){
+  const qty=+$('cQty').value||0, price=+$('cPrice').value||0, brok=(+$('cBrok').value||0)/100, side=$('cSide').value;
+  const gross=qty*price;
+  const commission=gross*brok;
+  const total = side==='buy' ? gross+commission : gross-commission;
+  $('tradeOut').innerHTML = `
+    <div class="row"><span>Gross (${qty} × ${fmt(price)})</span><b>${rs(gross)}</b></div>
+    <div class="row"><span>Brokerage (${(brok*100).toFixed(2)}%)</span><b class="down">- ${rs(commission)}</b></div>
+    <div class="row total"><span>${side==='buy'?'Total cost':'Net receivable'}</span><b class="${side==='buy'?'':'up'}">${rs(total)}</b></div>
+    <div class="row"><span>Break-even price / share</span><b>${fmt(side==='buy'? total/ (qty||1) : (gross+commission)/(qty||1))}</b></div>`;
+}
+['cQty','cPrice','cBrok','cSide'].forEach(id=>$(id).addEventListener('input',calcTrade));
+document.querySelectorAll('[data-calc]').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('[data-calc]').forEach(x=>x.classList.toggle('active',x===t));
+  const mode=t.dataset.calc;
+  $('calcTrade').style.display = mode==='trade'?'block':'none';
+  $('calcPlain').style.display = mode==='plain'?'block':'none';
+}));
+
+/* ============================ CALCULATOR — plain ============================ */
+let pExpr='';
+const KEYS=['C','⌫','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','0','.','=',''];
+$('pKeys').innerHTML = KEYS.map(k=>{
+  if(k==='') return '';
+  let c='key';
+  if(['÷','×','-','+'].includes(k)) c+=' op';
+  if(k==='=') c+=' eq';
+  if(['C','⌫','%'].includes(k)) c+=' fn';
+  const span = k==='0' ? 'style="grid-column:span 1"' : '';
+  return `<div class="${c}" data-k="${k}" ${span}>${k}</div>`;
+}).join('');
+function pRender(){ $('pDisp').textContent = pExpr || '0'; }
+$('pKeys').addEventListener('click',e=>{
+  const el=e.target.closest('.key'); if(!el)return;
+  const k=el.dataset.k;
+  if(k==='C'){ pExpr=''; }
+  else if(k==='⌫'){ pExpr=pExpr.slice(0,-1); }
+  else if(k==='='){
+    try{ const ex=pExpr.replace(/÷/g,'/').replace(/×/g,'*').replace(/%/g,'/100');
+      if(ex){ const r=Function('"use strict";return('+ex+')')(); pExpr=String(Math.round((r+Number.EPSILON)*1e8)/1e8); } }
+    catch{ pExpr='Error'; }
+  }
+  else pExpr+=k;
+  pRender();
+});
+
+/* ============================ PORTFOLIO ============================ */
+const ALLOC_COLORS=['#4C86D6','#6FA0E0','#3C6FB8','#8FB6E9','#2F5A96','#A9CBF0','#5E93DB','#264C82','#7EACE5','#3A6FB8'];
+let editIdx = -1;   // which row is in edit mode (-1 = none)
+function pfStatus(msg){ const el=$('pfStatus'); el.textContent=msg||''; if(msg){ clearTimeout(el._t); el._t=setTimeout(()=>el.textContent='',3500); } }
+const PF_FIELDS=['pfSym','pfQty','pfCost','pfCur','pfTarget','pfPlatform','pfDate','pfNotes'];
+function clearAddForm(){ PF_FIELDS.forEach(id=>$(id).value=''); $('pfSymHint').textContent=''; updatePreview(); }
+function readForm(){
+  return {
+    s: $('pfSym').value.trim().toUpperCase(),
+    qty: +$('pfQty').value,
+    cost: +$('pfCost').value,
+    curIn: $('pfCur').value!=='' ? +$('pfCur').value : null,
+    target: $('pfTarget').value!=='' ? +$('pfTarget').value : null,
+    platform: $('pfPlatform').value.trim(),
+    date: $('pfDate').value || '',
+    notes: $('pfNotes').value.trim()
+  };
+}
+function showForm(show){ $('pfForm').style.display = show?'grid':'none'; }
+
+/* ---- easy buy helpers ---- */
+const SAVE_LBL='✓ Save Buy', UPD_LBL='✓ Update';
+function todayStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function fmtD(d){ const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; }
+function prevTradingDay(){ const d=new Date(); const w=d.getDay(); let back=1; if(w===1)back=3; else if(w===0)back=2; else if(w===6)back=1; d.setDate(d.getDate()-back); return d; }
+function populateSymList(){ $('symList').innerHTML = STOCKS.map(x=>`<option value="${x.s}">${x.n}</option>`).join(''); }
+function symHint(){
+  const s=$('pfSym').value.trim().toUpperCase();
+  const m=stock(s);
+  if(m){
+    $('pfSymHint').textContent = m.n + (isLive(s)?` · Snapshot ${fmt(curPrice(s))} (edit if wrong)`:'');
+    if(isLive(s) && $('pfCur').value===''){ $('pfCur').value=curPrice(s).toFixed(2); }
+  } else { $('pfSymHint').textContent = s ? 'Naya symbol — current price khud daalein' : ''; }
+  updatePreview();
+}
+function updatePreview(){
+  const el=$('pfPreview'); if(!el) return;
+  const qty=+$('pfQty').value, cost=+$('pfCost').value, s=$('pfSym').value.trim().toUpperCase();
+  const cur = $('pfCur').value!=='' ? +$('pfCur').value : (curPrice(s)!=null?curPrice(s):cost);
+  if(!qty||!cost){ el.innerHTML='Symbol aur qty daaltay hi yahan invested / value / P&amp;L preview aa jayega.'; return; }
+  const inv=qty*cost, val=qty*(cur||cost), pnl=val-inv, pct=inv?pnl/inv*100:0;
+  // projected total invested = existing (excluding the row being edited) + this buy
+  let baseInv=0; portfolio.forEach((p,idx)=>{ if(editIdx>=0 && idx===editIdx) return; baseInv += p.qty*p.cost; });
+  const newTotal=baseInv+inv;
+  el.innerHTML = `This buy → Invested <b>${rs(inv)}</b> · Value now <b>${rs(val)}</b> · P&amp;L <b class="${cls(pnl)}">${pnl>=0?'+':''}${rs(pnl)} (${pnl>=0?'+':''}${pct.toFixed(1)}%)</b>`+
+    `<span style="width:100%;color:var(--muted2)">New total invested → <b style="color:var(--txt)">${rs(newTotal)}</b></span>`;
+}
+$('pfSym').addEventListener('input',()=>{ const i=$('pfSym'); const p=i.selectionStart; i.value=i.value.toUpperCase(); try{i.setSelectionRange(p,p);}catch(e){} symHint(); });
+['pfQty','pfCost','pfCur'].forEach(id=>$(id).addEventListener('input',updatePreview));
+
+// SAVE (add / average / update)
+$('pfAdd').addEventListener('click',async()=>{
+  if(!canEdit) return;
+  const f=readForm();
+  if(!f.s||!f.qty||f.qty<=0||!f.cost||f.cost<=0){ $('pfSym').focus(); pfStatus('⚠ Symbol, Qty aur Buy price sahi daalein.'); return; }
+  const rec={ s:f.s, qty:f.qty, cost:f.cost,
+    cur: f.curIn!=null?f.curIn:(curPrice(f.s)!=null?curPrice(f.s):f.cost),
+    target:f.target, platform:f.platform, date:f.date, notes:f.notes };
+  if(editIdx>=0){
+    portfolio[editIdx]=rec; pfStatus(`✓ ${f.s} updated.`); editIdx=-1;
+  } else {
+    const ex=portfolio.find(p=>p.s===f.s && (p.platform||'')===(f.platform||''));
+    if(ex){
+      const totQty=ex.qty+f.qty;
+      ex.cost=(ex.qty*ex.cost+f.qty*f.cost)/totQty; ex.qty=totQty;
+      if(f.curIn!=null) ex.cur=f.curIn;
+      if(f.target!=null) ex.target=f.target;
+      if(f.date) ex.date=f.date;
+      if(f.notes) ex.notes=f.notes;
+      pfStatus(`✓ ${f.s} (${f.platform||'no platform'}): averaged → ${totQty} @ ${fmt(ex.cost)}`);
+    } else { portfolio.push(rec); pfStatus(`✓ ${f.s}${f.platform?' · '+f.platform:''} added.`); }
+  }
+  await store.set('psx:portfolio',portfolio);
+  clearAddForm(); showForm(false); $('pfAdd').textContent=SAVE_LBL;
+  renderPortfolio();
+});
+// CANCEL
+$('pfClear').addEventListener('click',()=>{ editIdx=-1; clearAddForm(); pfStatus(''); showForm(false); $('pfAdd').textContent=SAVE_LBL; });
+// toggle blank Add form
+$('addToggle').addEventListener('click',()=>{
+  const open=$('pfForm').style.display==='none';
+  if(open){ editIdx=-1; clearAddForm(); $('pfDate').value=todayStr(); $('pfAdd').textContent=SAVE_LBL; showForm(true); $('pfSym').focus(); }
+  else showForm(false);
+});
+// CLEAR ALL
+$('clearPf').addEventListener('click',async()=>{ if(!canEdit)return; if(portfolio.length && !confirm('Saari positions clear kar dein?'))return; portfolio=[]; editIdx=-1; showForm(false); await store.del('psx:portfolio'); renderPortfolio(); });
+// Enter = save, Esc = cancel (inside form)
+$('pfForm').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();$('pfAdd').click();} else if(e.key==='Escape'){$('pfClear').click();} });
+
+function posCur(pos){ if(navs[pos.s]!=null) return +navs[pos.s]; const live=curPrice(pos.s); return (live!=null)?live:pos.cur; }
+function posDayChg(pos){ return (curPrice(pos.s)!=null) ? curChg(pos.s) : 0; }
+
+/* ---- PDF / print report (broker-statement style) ---- */
+function downloadPDF(){
+  if(!portfolio.length){ alert('Portfolio khali hai — pehle koi buy add karein.'); return; }
+  const sign=v=>v>=0?'+':'', col=v=>v>=0?'#127a52':'#b23b46';
+  // group by broker
+  const groups={};
+  portfolio.forEach(pos=>{
+    const cur=posCur(pos), iv=pos.qty*pos.cost, cv=pos.qty*cur, pnl=cv-iv, pct=iv?pnl/iv*100:0;
+    const k=pos.platform||'Other';
+    (groups[k]=groups[k]||[]).push({pos,cur,iv,cv,pnl,pct});
+  });
+  let gInv=0,gVal=0,gDay=0;
+  portfolio.forEach(pos=>{ const cur=posCur(pos); const dc=posDayChg(pos); const prev=cur/(1+dc/100);
+    gInv+=pos.qty*pos.cost; gVal+=pos.qty*cur; gDay+=pos.qty*(cur-prev); });
+  const gPnl=gVal-gInv, gPct=gInv?gPnl/gInv*100:0;
+
+  const gKeys=Object.keys(groups).sort((a,b)=>groups[b].reduce((s,r)=>s+r.cv,0)-groups[a].reduce((s,r)=>s+r.cv,0));
+  const sections = gKeys.map(k=>{
+    const arr=groups[k]; let si=0,sv=0,sp=0;
+    const body=arr.map(r=>{ si+=r.iv; sv+=r.cv; sp+=r.pnl; const nm=(stock(r.pos.s)||{}).n||'';
+      return `<tr>
+        <td class="sym">${r.pos.s}</td><td class="nm">${nm}</td>
+        <td class="n">${r.pos.qty.toLocaleString('en-PK')}</td>
+        <td class="n">${fmt(r.pos.cost)}</td>
+        <td class="n">${rs(r.iv)}</td>
+        <td class="n">${fmt(r.cur)}</td>
+        <td class="n">${rs(r.cv)}</td>
+        <td class="n" style="color:${col(r.pnl)}">${sign(r.pnl)}${rs(r.pnl)}</td>
+        <td class="n" style="color:${col(r.pnl)}">${sign(r.pnl)}${r.pct.toFixed(1)}%</td></tr>`;}).join('');
+    const spct=si?sp/si*100:0;
+    return `<h2>${k} <span class="cnt">(${arr.length} position${arr.length>1?'s':''})</span></h2>
+      <table><thead><tr>
+        <th class="l">Symbol</th><th class="l">Company</th><th>Qty</th><th>Avg cost</th><th>Invested</th>
+        <th>Current</th><th>Market value</th><th>Unreal. P/L</th><th>%</th></tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr class="sub"><td colspan="4">Sub Total — ${k}</td>
+        <td class="n">${rs(si)}</td><td></td><td class="n">${rs(sv)}</td>
+        <td class="n" style="color:${col(sp)}">${sign(sp)}${rs(sp)}</td>
+        <td class="n" style="color:${col(sp)}">${sign(spct)}${spct.toFixed(1)}%</td></tr></tfoot></table>`;
+  }).join('');
+
+  const now=new Date();
+  // realized / sold section
+  let realizedSection='';
+  if(realized.length){
+    let rTot=0, rInv=0;
+    const rBody=realized.map(r=>{
+      const inv=r.cost*r.qty, sold=r.sell*r.qty, pnl=(r.sell-r.cost)*r.qty, pct=inv?pnl/inv*100:0;
+      rTot+=pnl; rInv+=inv;
+      return `<tr>
+        <td class="l">${r.date||'—'}</td><td class="sym">${r.s}</td><td class="l">${r.platform||'—'}</td>
+        <td class="n">${r.qty.toLocaleString('en-PK')}</td>
+        <td class="n">${fmt(r.cost)}</td><td class="n">${fmt(r.sell)}</td>
+        <td class="n">${rs(inv)}</td><td class="n">${rs(sold)}</td>
+        <td class="n" style="color:${col(pnl)}">${sign(pnl)}${rs(pnl)}</td>
+        <td class="n" style="color:${col(pnl)}">${sign(pnl)}${pct.toFixed(1)}%</td></tr>`;
+    }).join('');
+    const rPct=rInv?rTot/rInv*100:0;
+    realizedSection=`<h2>Realized / Sold History <span class="cnt">(${realized.length} trade${realized.length>1?'s':''})</span></h2>
+      <table><thead><tr>
+        <th class="l">Date</th><th class="l">Symbol</th><th class="l">Platform</th><th>Qty</th>
+        <th>Buy</th><th>Sell</th><th>Invested</th><th>Sold for</th><th>Realized P/L</th><th>%</th></tr></thead>
+      <tbody>${rBody}</tbody>
+      <tfoot><tr class="sub"><td colspan="6">Total Realized (booked)</td>
+        <td class="n">${rs(rInv)}</td><td></td>
+        <td class="n" style="color:${col(rTot)}">${sign(rTot)}${rs(rTot)}</td>
+        <td class="n" style="color:${col(rTot)}">${sign(rPct)}${rPct.toFixed(1)}%</td></tr></tfoot></table>`;
+  }
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>PSX Portfolio Statement</title><style>
+    *{box-sizing:border-box} body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;margin:0;padding:26px 30px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a3d6d;padding-bottom:12px;margin-bottom:16px}
+    .top h1{font-size:20px;margin:0;color:#1a3d6d;letter-spacing:.3px}
+    .top .s{font-size:11px;color:#666;margin-top:3px}
+    .top .r{text-align:right;font-size:11px;color:#444}
+    .top .r b{font-size:13px;color:#1a1a1a}
+    .cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+    .cardp{border:1px solid #d8d8d8;border-radius:7px;padding:9px 13px;min-width:150px;background:#fafbfc}
+    .cardp .l{font-size:9.5px;color:#888;text-transform:uppercase;letter-spacing:.6px}
+    .cardp .v{font-size:15px;font-weight:700;margin-top:3px}
+    h2{font-size:13px;color:#1a3d6d;margin:16px 0 5px;border-left:3px solid #1a3d6d;padding-left:8px}
+    h2 .cnt{color:#999;font-weight:400;font-size:11px}
+    table{width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:6px}
+    th,td{border:1px solid #e2e2e2;padding:5px 7px}
+    th{background:#eef2f7;color:#333;font-weight:600;text-align:right}
+    th.l,td.l{text-align:left} td.n{text-align:right;font-variant-numeric:tabular-nums} td.sym{font-weight:700}
+    td.nm{color:#555;font-size:9.5px} tfoot .sub td{background:#f3f6fa;font-weight:700;border-top:2px solid #cdd8e6}
+    .grand{margin-top:12px;border:2px solid #1a3d6d;border-radius:7px;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;background:#f4f7fb}
+    .grand .gl{font-size:13px;font-weight:700;color:#1a3d6d}
+    .grand .gv{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+    .foot{color:#999;font-size:9.5px;margin-top:16px;border-top:1px solid #e2e2e2;padding-top:8px}
+    @media print{ body{padding:12mm} h2{page-break-after:avoid} table{page-break-inside:auto} tr{page-break-inside:avoid} }
+  </style></head><body>
+  <div class="top">
+    <div><h1>PSX PORTFOLIO STATEMENT</h1><div class="s">Unrealized P&amp;L &middot; all brokers &middot; ~5-min delayed prices</div></div>
+    <div class="r">Statement date<br><b>${now.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'})}</b><br>${now.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</div>
+  </div>
+  <div class="cards">
+    <div class="cardp"><div class="l">Total Invested</div><div class="v">${rs(gInv)}</div></div>
+    <div class="cardp"><div class="l">Market Value</div><div class="v">${rs(gVal)}</div></div>
+    <div class="cardp"><div class="l">Total P&amp;L</div><div class="v" style="color:${col(gPnl)}">${sign(gPnl)}${rs(gPnl)} (${sign(gPnl)}${gPct.toFixed(1)}%)</div></div>
+    <div class="cardp"><div class="l">Today's P&amp;L</div><div class="v" style="color:${col(gDay)}">${sign(gDay)}${rs(gDay)}</div></div>
+  </div>
+  ${sections}
+  <div class="grand"><span class="gl">GRAND TOTAL &middot; ${portfolio.length} positions</span>
+    <span class="gv">Invested ${rs(gInv)} &nbsp;|&nbsp; Value ${rs(gVal)} &nbsp;|&nbsp; <span style="color:${col(gPnl)}">P&amp;L ${sign(gPnl)}${rs(gPnl)} (${sign(gPnl)}${gPct.toFixed(1)}%)</span></span></div>
+  ${realizedSection}
+  <div class="foot">Generated from PSX Dashboard &middot; informational only, not investment advice. Prices ~5-min delayed via PSX Data Portal. Confirm figures with your broker statement.</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('Popup block ho gaya — is site ke liye popups allow karein, phir dobara PDF dabayein.'); return; }
+  w.document.write(html); w.document.close(); w.focus();
+  setTimeout(()=>{ try{ w.print(); }catch(e){} }, 500);
+}
+$('pdfBtn').addEventListener('click',downloadPDF);
+
+// ===== ONE-TIME: apply July 2026 KTrade + Arif Habib buys/sells =====
+const JUL_TXNS = [
+  {type:'sell', s:'NBP',  platform:'KTrade',           qty:1720,  price:206.41},
+  {type:'sell', s:'MCB',  platform:'KTrade',           qty:360,   price:412.30},
+  {type:'sell', s:'UBL',  platform:'KTrade',           qty:1185,  price:477.72},
+  {type:'buy',  s:'MEBL', platform:'KTrade',           qty:1945,  price:549.94},
+  {type:'sell', s:'NBP',  platform:'Arif Habib (AHL)', qty:4000,  price:204.1834},
+  {type:'sell', s:'BAFL', platform:'Arif Habib (AHL)', qty:17200, price:57.9947},
+  {type:'sell', s:'MCB',  platform:'Arif Habib (AHL)', qty:700,   price:412.9916},
+  {type:'buy',  s:'MEBL', platform:'Arif Habib (AHL)', qty:4000,  price:548.1466},
+];
+async function applyJulTxns(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_jul2026',false)){ alert('Ye transactions pehle hi apply ho chuki hain — dobara nahi hongi.'); return; }
+  if(!confirm('July 2026 ki KTrade + Arif Habib buys/sells apply karein?\n\n• SELL: KTrade NBP1720, MCB360, UBL1185 · AHL NBP4000, BAFL17200, MCB700\n• BUY: KTrade MEBL1945, AHL MEBL4000\n\nSirf tab OK karein jab aap ne ye KHUD abhi tak nahi daali. Ye sirf EK dafa chalegi.')) return;
+  const warn=[]; let applied=0;
+  JUL_TXNS.forEach(op=>{
+    const idx = portfolio.findIndex(p=>p.s===op.s && (p.platform||'')===op.platform);
+    if(op.type==='buy'){
+      if(idx>=0){ const p=portfolio[idx]; const nq=p.qty+op.qty; p.cost=(p.qty*p.cost+op.qty*op.price)/nq; p.qty=nq; }
+      else { portfolio.push({s:op.s,qty:op.qty,cost:op.price,cur:(curPrice(op.s)!=null?curPrice(op.s):op.price),platform:op.platform,date:todayStr(),notes:''}); }
+      applied++;
+    } else {
+      if(idx<0){ warn.push(`${op.s} (${op.platform}) — holding nahi mili, skip`); return; }
+      const p=portfolio[idx];
+      if(p.qty < op.qty){ warn.push(`${op.s} (${op.platform}) — held ${p.qty} < sell ${op.qty}, skip`); return; }
+      realized.push({date:todayStr(), s:op.s, platform:op.platform, qty:op.qty, cost:p.cost, sell:op.price, pnl:(op.price-p.cost)*op.qty});
+      if(op.qty>=p.qty) portfolio.splice(idx,1); else p.qty-=op.qty;
+      applied++;
+    }
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  await store.set('psx:txn_jul2026',true);
+  renderPortfolio(); renderRealized();
+  const b=$('applyTxnBtn'); if(b){ b.textContent='✓ July applied'; b.disabled=true; }
+  alert(`Done! ${applied}/${JUL_TXNS.length} transactions apply ho gayin.`+(warn.length?`\n\nSkip huin:\n- ${warn.join('\n- ')}`:'')+`\n\nAb Sold History + PDF statement check kar lein.`);
+}
+$('applyTxnBtn') && $('applyTxnBtn').addEventListener('click', applyJulTxns);
+
+// ===== ONE-TIME: add Meezan Islamic Fund (mutual fund) holding =====
+async function addMifHolding(){
+  if(!canEdit) return;
+  if(await store.get('psx:mif_added',false)){ alert('Meezan Fund holding pehle hi add ho chuki hai.'); return; }
+  if(portfolio.some(p=>p.s==='MIF' && (p.platform||'')==='Al Meezan (Funds)')){ alert('MIF holding pehle se maujood hai.'); return; }
+  if(!confirm('Meezan Islamic Fund (MIF) holding add karein?\n\n12,016.7889 units @ 166.4487 · Al Meezan (Funds)\nInvested 2,000,000 · NAV 163.0619 · Loss ~ -40,520\n\nSirf EK dafa chalegi.')) return;
+  portfolio.push({s:'MIF', qty:12016.7889, cost:166.4487, cur:163.0619, platform:'Al Meezan (Funds)', date:'2026-07-15', notes:'Meezan Islamic Fund Growth-B · mutual fund NAV (manually update)'});
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:mif_added',true);
+  renderPortfolio();
+  const b=$('addMifBtn'); if(b){ b.textContent='✓ Meezan Fund added'; b.disabled=true; }
+  alert('Ho gaya! Meezan Islamic Fund holding add ho gayi. Neeche "Al Meezan (Funds)" card dikhega.\n\nNAV badalne par MIF row par ✎ Edit → Current update kar dein.');
+}
+$('addMifBtn') && $('addMifBtn').addEventListener('click', addMifHolding);
+
+// ===== ONE-TIME: apply 30-Jul-2026 KTrade buys =====
+const JUL30_BUYS = [
+  {s:'FFC',  platform:'KTrade', qty:266, price:564.47},
+  {s:'MLCF', platform:'KTrade', qty:531, price:94.15},
+  {s:'OGDC', platform:'KTrade', qty:317, price:315.44},
+  {s:'LUCK', platform:'KTrade', qty:170, price:439.70},
+  {s:'MARI', platform:'KTrade', qty:192, price:650.12},
+];
+async function applyJul30(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_jul30',false)){ alert('30-Jul buys pehle hi apply ho chuki hain.'); return; }
+  if(!confirm('30-Jul KTrade buys apply karein?\n\nFFC 266 @ 564.47 · MLCF 531 @ 94.15 · OGDC 317 @ 315.44 · LUCK 170 @ 439.70 · MARI 192 @ 650.12\n\nFFC/OGDC/LUCK existing ke saath average honge; MLCF/MARI nayi. Sirf EK dafa.')) return;
+  let n=0;
+  JUL30_BUYS.forEach(op=>{
+    const idx=portfolio.findIndex(p=>p.s===op.s && (p.platform||'')===op.platform);
+    if(idx>=0){ const p=portfolio[idx]; const nq=p.qty+op.qty; p.cost=(p.qty*p.cost+op.qty*op.price)/nq; p.qty=nq; }
+    else { portfolio.push({s:op.s,qty:op.qty,cost:op.price,cur:(curPrice(op.s)!=null?curPrice(op.s):op.price),platform:op.platform,date:'2026-07-30',notes:''}); }
+    n++;
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:txn_jul30',true);
+  renderPortfolio();
+  const b=$('jul30Btn'); if(b){ b.textContent='✓ 30-Jul applied'; b.disabled=true; }
+  alert(`Done! ${n} buys apply ho gayin. FFC/OGDC/LUCK average ho gaye, MLCF & MARI nayi rows.`);
+}
+$('jul30Btn') && $('jul30Btn').addEventListener('click', applyJul30);
+
+// ===== ONE-TIME: add Orbit Securities SEARL holding =====
+async function addOrbit(){
+  if(!canEdit) return;
+  if(await store.get('psx:orbit_added',false)){ alert('Orbit holding pehle hi add ho chuki hai.'); return; }
+  if(portfolio.some(p=>p.s==='SEARL' && (p.platform||'')==='Orbit Securities')){ alert('Orbit SEARL pehle se maujood hai.'); return; }
+  if(!confirm('Orbit Securities holding add karein?\n\nSEARL 10,000 @ 90.2537 · Orbit Securities\nInvested 902,537 (all-in)\n\nSirf EK dafa chalegi.')) return;
+  portfolio.push({s:'SEARL', qty:10000, cost:90.2537, cur:(curPrice('SEARL')!=null?curPrice('SEARL'):91.02), platform:'Orbit Securities', date:'2026-08-04', notes:'Orbit Securities (Rizwan) · Client 009034 / Z34'});
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:orbit_added',true);
+  renderPortfolio();
+  const b=$('orbitBtn'); if(b){ b.textContent='✓ Orbit added'; b.disabled=true; }
+  alert('Ho gaya! Orbit Securities (SEARL) holding add ho gayi — neeche naya "Orbit Securities" card dikhega.');
+}
+$('orbitBtn') && $('orbitBtn').addEventListener('click', addOrbit);
+
+// ===== ONE-TIME: apply 11-Sep-2026 Arif Habib buys =====
+const SEP11_BUYS = [
+  {s:'SSGC', platform:'Arif Habib (AHL)', qty:21000, price:23.63},
+  {s:'MLCF', platform:'Arif Habib (AHL)', qty:15500, price:94.18},
+  {s:'FFC',  platform:'Arif Habib (AHL)', qty:2800,  price:533.24},
+  {s:'DGKC', platform:'Arif Habib (AHL)', qty:7500,  price:194.07},
+];
+async function applySep11(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sep11',false)){ alert('11-Sep buys pehle hi apply ho chuki hain.'); return; }
+  if(!confirm('11-Sep Arif Habib (AHL) buys apply karein?\n\nSSGC 21,000 @ 23.63 · MLCF 15,500 @ 94.18 · FFC 2,800 @ 533.24 · DGKC 7,500 @ 194.07\nTotal ~ Rs 4,904,617\n\nFFC existing AHL ke saath average hoga; baaki nayi. Sirf EK dafa.')) return;
+  let n=0;
+  SEP11_BUYS.forEach(op=>{
+    const idx=portfolio.findIndex(p=>p.s===op.s && (p.platform||'')===op.platform);
+    if(idx>=0){ const p=portfolio[idx]; const nq=p.qty+op.qty; p.cost=(p.qty*p.cost+op.qty*op.price)/nq; p.qty=nq; }
+    else { portfolio.push({s:op.s,qty:op.qty,cost:op.price,cur:(curPrice(op.s)!=null?curPrice(op.s):op.price),platform:op.platform,date:'2026-09-11',notes:''}); }
+    n++;
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:txn_sep11',true);
+  renderPortfolio();
+  const b=$('sep11Btn'); if(b){ b.textContent='✓ 11-Sep applied'; b.disabled=true; }
+  alert(`Done! ${n} buys apply ho gayin (Arif Habib). FFC average hua, SSGC/MLCF/DGKC nayi rows.`);
+}
+$('sep11Btn') && $('sep11Btn').addEventListener('click', applySep11);
+
+// ===== ONE-TIME: apply 7-Sep-2026 Arif Habib sells (book realized) =====
+const SEP_SELLS = [
+  {s:'OGDC', platform:'Arif Habib (AHL)', qty:3690,  price:329.7464},
+  {s:'PPL',  platform:'Arif Habib (AHL)', qty:4690,  price:225.5073},
+  {s:'TPLP', platform:'Arif Habib (AHL)', qty:17990, price:14.4575},
+];
+async function applySepSells(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sepsells',false)){ alert('7-Sep sells pehle hi book ho chuki hain.'); return; }
+  if(!confirm('7-Sep Arif Habib (AHL) sells book karein?\n\nOGDC 3690 @ 329.75 · PPL 4690 @ 225.51 · TPLP 17990 @ 14.46\n\nRealized P&L calculate hoga aur Sold History mein aayega. Sirf EK dafa.')) return;
+  const warn=[]; let n=0;
+  SEP_SELLS.forEach(op=>{
+    const idx=portfolio.findIndex(p=>p.s===op.s && (p.platform||'')===op.platform);
+    if(idx<0){ warn.push(`${op.s} (AHL) — holding nahi mili, skip`); return; }
+    const p=portfolio[idx];
+    if(p.qty < op.qty){ warn.push(`${op.s} — held ${p.qty} < sell ${op.qty}, skip`); return; }
+    realized.push({date:'2026-09-07', s:op.s, platform:op.platform, qty:op.qty, cost:p.cost, sell:op.price, pnl:(op.price-p.cost)*op.qty});
+    if(op.qty>=p.qty) portfolio.splice(idx,1); else p.qty-=op.qty;
+    n++;
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  await store.set('psx:txn_sepsells',true);
+  renderPortfolio(); renderRealized();
+  const b=$('sepSellBtn'); if(b){ b.textContent='✓ 7-Sep sells booked'; b.disabled=true; }
+  alert(`Done! ${n} sells book ho gayin (Arif Habib). Sold History + Realized P&L check karein.`+(warn.length?`\n\nSkip:\n- ${warn.join('\n- ')}`:''));
+}
+$('sepSellBtn') && $('sepSellBtn').addEventListener('click', applySepSells);
+
+// ===== ONE-TIME: fix Sep AHL buy prices to statement all-in =====
+async function fixSepBuys(){
+  if(!canEdit) return;
+  if(await store.get('psx:sep_buys_fixed',false)){ alert('Prices pehle hi fix ho chuki hain.'); return; }
+  if(!(await store.get('psx:txn_sep11',false))){ alert('Pehle "11-Sep AHL buys" apply karein, phir ye fix chalega.'); return; }
+  if(!confirm('Sep AHL buy prices ko statement ke all-in par set karein?\n\nSSGC→23.6764 · MLCF→94.3520 · DGKC→194.4128 · FFC average thoda adjust.\n\nSirf EK dafa.')) return;
+  const setCost={SSGC:23.6764, MLCF:94.3520, DGKC:194.4128};
+  let n=0;
+  Object.entries(setCost).forEach(([s,c])=>{
+    const idx=portfolio.findIndex(p=>p.s===s && (p.platform||'')==='Arif Habib (AHL)');
+    if(idx>=0){ portfolio[idx].cost=c; n++; }
+  });
+  const fi=portfolio.findIndex(p=>p.s==='FFC' && (p.platform||'')==='Arif Habib (AHL)');
+  if(fi>=0 && portfolio[fi].qty>0){ portfolio[fi].cost += 2800*(534.1644-533.24)/portfolio[fi].qty; n++; }
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:sep_buys_fixed',true);
+  renderPortfolio();
+  const b=$('sepFixBtn'); if(b){ b.textContent='✓ Prices fixed'; b.disabled=true; }
+  alert(`Done! ${n} positions ki cost all-in par set ho gayi.`);
+}
+$('sepFixBtn') && $('sepFixBtn').addEventListener('click', fixSepBuys);
+
+// ===== ONE-TIME: 18-Sep KTrade MEBL 2855 sell (Friday) =====
+async function applyMeblSell(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_meblsell',false)){ alert('MEBL sell pehle hi book ho chuki hai.'); return; }
+  const idx=portfolio.findIndex(p=>p.s==='MEBL' && (p.platform||'')==='KTrade');
+  if(idx<0){ alert('KTrade MEBL holding nahi mili — pehle July buys apply karein.'); return; }
+  const p=portfolio[idx];
+  if(p.qty<2855){ alert(`KTrade MEBL sirf ${p.qty} hai, 2855 sell nahi ho sakti.`); return; }
+  const sellPrice=551.3597; // net proceeds 1,574,132.68 / 2855
+  if(!confirm(`18-Sep KTrade MEBL 2,855 @ ~551.36 sell book karein?\nNet proceeds ~1,574,133 · realized cost avg ${p.cost.toFixed(2)} par.\nSirf EK dafa.`)) return;
+  realized.push({date:'2026-09-18', s:'MEBL', platform:'KTrade', qty:2855, cost:p.cost, sell:sellPrice, pnl:(sellPrice-p.cost)*2855});
+  if(p.qty>2855) p.qty-=2855; else portfolio.splice(idx,1);
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  await store.set('psx:txn_meblsell',true);
+  renderPortfolio(); renderRealized();
+  const b=$('meblSellBtn'); if(b){ b.textContent='✓ MEBL sell booked'; b.disabled=true; }
+  alert('Done! KTrade MEBL 2855 sell book ho gayi — Sale Journal + Monthly Closure + Incentive update ho gaye.');
+}
+$('meblSellBtn') && $('meblSellBtn').addEventListener('click', applyMeblSell);
+
+// ===== ONE-TIME: 21-Sep Arif Habib sells (5) =====
+const SEP21_SELLS=[
+  {s:'DGKC', qty:7500,  price:196.9347},
+  {s:'FFC',  qty:5500,  price:533.4233},
+  {s:'MEBL', qty:4000,  price:550.1444},
+  {s:'MLCF', qty:15500, price:94.5416},
+  {s:'SSGC', qty:21000, price:24.0734},
+];
+async function applySep21(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sep21',false)){ alert('21-Sep sells pehle hi book ho chuki hain.'); return; }
+  if(!confirm('21-Sep Arif Habib (AHL) sells book karein?\n\nDGKC 7500 · FFC 5500 · MEBL 4000 · MLCF 15500 · SSGC 21000\nRealized ~ +65,210. Sirf EK dafa.')) return;
+  const warn=[]; let n=0;
+  SEP21_SELLS.forEach(op=>{
+    const idx=portfolio.findIndex(p=>p.s===op.s && (p.platform||'')==='Arif Habib (AHL)');
+    if(idx<0){ warn.push(`${op.s} (AHL) — holding nahi mili, skip`); return; }
+    const p=portfolio[idx];
+    if(p.qty<op.qty){ warn.push(`${op.s} — held ${p.qty} < sell ${op.qty}, skip`); return; }
+    realized.push({date:'2026-09-21', s:op.s, platform:'Arif Habib (AHL)', qty:op.qty, cost:p.cost, sell:op.price, pnl:(op.price-p.cost)*op.qty});
+    if(op.qty>=p.qty) portfolio.splice(idx,1); else p.qty-=op.qty;
+    n++;
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  await store.set('psx:txn_sep21',true);
+  renderPortfolio(); renderRealized();
+  const b=$('sep21Btn'); if(b){ b.textContent='✓ 21-Sep sells booked'; b.disabled=true; }
+  alert(`Done! ${n} sells book ho gayin. Sale Journal + Monthly Closure + Incentive update.`+(warn.length?`\n\nSkip:\n- ${warn.join('\n- ')}`:''));
+}
+$('sep21Btn') && $('sep21Btn').addEventListener('click', applySep21);
+
+// ===== GOLD ETF (IAU) FLIP TRACKER (USD) =====
+let gold = {buy:84.38, qty:10, cur:84.17, tgt:5.5};
+let goldSaveT=null;
+function glFill(){ if(!$('glBuy'))return; $('glBuy').value=gold.buy??''; $('glQty').value=gold.qty??''; $('glCur').value=gold.cur??''; $('glTgt').value=gold.tgt??5.5; }
+function renderGold(){
+  if(!$('glOut')) return;
+  const buy=+gold.buy||0, qty=+gold.qty||0, cur=+gold.cur||0, tgt=+gold.tgt||0;
+  const invested=buy*qty, val=cur*qty, pnl=val-invested, pct=buy?((cur-buy)/buy*100):0;
+  const tgtPrice=buy*(1+tgt/100), tgtVal=tgtPrice*qty, hit=cur>0&&cur>=tgtPrice;
+  const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const R=(l,v,c)=>`<div class="row"><span>${l}</span><span${c?` style="color:${c}"`:''}>${v}</span></div>`;
+  let banner='';
+  if(cur>0){
+    if(hit) banner=`<div class="row tot" style="color:var(--up)"><span>🎯 TARGET HIT — sell now!</span><span>${pct>=0?'+':''}${pct.toFixed(2)}%</span></div>`;
+    else { const need=tgtPrice-cur, needPct=tgt-pct; banner=`<div class="row" style="font-weight:700"><span>Target tak baaki</span><span>${usd(need)}/sh · ${needPct.toFixed(2)}% aur</span></div>`; }
+  }
+  $('glOut').innerHTML =
+      R(`Invested (${qty} × ${usd(buy)})`, usd(invested))
+    + R('Current value', usd(val))
+    + R('P&L', (pnl>=0?'+':'−')+usd(Math.abs(pnl))+` (${pct>=0?'+':''}${pct.toFixed(2)}%)`, pnl>=0?'var(--up)':'var(--down)')
+    + R(`Sell target (+${tgt}%)`, `${usd(tgtPrice)}/sh · ${usd(tgtVal)} total`, '#e0a83e')
+    + banner;
+}
+function glRead(){ gold={buy:parseFloat($('glBuy').value)||0, qty:parseFloat($('glQty').value)||0, cur:parseFloat($('glCur').value)||0, tgt:parseFloat($('glTgt').value)||0}; renderGold();
+  clearTimeout(goldSaveT); goldSaveT=setTimeout(()=>store.set('psx:gold',gold),600); }
+if($('glBuy')){ ['glBuy','glQty','glCur','glTgt'].forEach(id=>$(id).addEventListener('input',glRead)); }
+
+// ===== WITHDRAWAL / SALE TAX CALCULATOR =====
+let acct = {}; // {broker:{t,n}}
+let wdLast = null;
+function wdNum(id){ const v=parseFloat($(id).value); return isFinite(v)?v:0; }
+function wdFillAcct(){ const a=acct[$('wdBroker').value]||{}; $('wdTitle').value=a.t||''; $('wdAcct').value=a.n||''; }
+function wdSaveAcct(){ acct[$('wdBroker').value]={t:$('wdTitle').value.trim(),n:$('wdAcct').value.trim()}; store.set('psx:acct',acct); }
+function calcWd(){
+  const qty=wdNum('wdQty'), buy=wdNum('wdBuy'), sell=wdNum('wdSell');
+  const filer=$('wdFiler').value==='1';
+  const commR=wdNum('wdComm')/100, sstR=wdNum('wdSst')/100, cdcR=wdNum('wdCdc')/100;
+  const cgtR=(filer?wdNum('wdCgtF'):wdNum('wdCgtN'))/100;
+  const gross=qty*sell, commission=gross*commR, sst=commission*sstR, cdc=gross*cdcR;
+  const charges=commission+sst+cdc;
+  const gain=(sell-buy)*qty, cgt=gain>0?gain*cgtR:0;
+  const net=gross-charges-cgt;
+  wdLast={qty,buy,sell,filer,gross,commission,sst,cdc,charges,gain,cgt,cgtR,net,commR,sstR,cdcR};
+  if(!(qty>0 && sell>0)){ $('wdOut').innerHTML='<div class="muted">Shares aur sell price daalein — breakdown yahan aayega.</div>'; return; }
+  const R=(l,v,c)=>`<div class="row"><span>${l}</span><span${c?` style="color:${c}"`:''}>${v}</span></div>`;
+  $('wdOut').innerHTML =
+      R(`Gross proceeds (${qty} × ${fmt(sell)})`, rs(gross))
+    + R(`− Brokerage commission (${(commR*100).toFixed(2)}%)`, '−'+rs(commission))
+    + R(`− SST on commission (${(sstR*100)}%)`, '−'+rs(sst))
+    + R(`− CDC + exchange fee (${(cdcR*100).toFixed(3)}%)`, '−'+rs(cdc))
+    + R(`Capital gain (sell − buy)`, (gain>=0?'+':'−')+rs(Math.abs(gain)), gain>=0?'var(--up)':'var(--down)')
+    + R(`− CGT — Government tax (${filer?'filer':'non-filer'} ${(cgtR*100)}% on gain)${gain<=0?' · no gain → no CGT':''}`, '−'+rs(cgt), 'var(--down)')
+    + `<div class="row tot"><span>Net amount receivable</span><span>${rs(net)}</span></div>`;
+}
+if($('wdBroker')){
+  $('wdBroker').addEventListener('change',()=>{ wdFillAcct(); calcWd(); });
+  ['wdTitle','wdAcct'].forEach(id=>$(id).addEventListener('input',wdSaveAcct));
+  ['wdQty','wdBuy','wdSell','wdSym','wdComm','wdSst','wdCdc','wdCgtF','wdCgtN'].forEach(id=>$(id).addEventListener('input',calcWd));
+  $('wdFiler').addEventListener('change',calcWd);
+  $('wdPdf').addEventListener('click',genWdPdf);
+}
+function genWdPdf(){
+  calcWd(); const w=wdLast;
+  if(!w || !(w.qty>0 && w.sell>0)){ alert('Pehle shares aur sell price daalein.'); return; }
+  const broker=$('wdBroker').value;
+  const title=$('wdTitle').value.trim()||'________________________';
+  const acctNo=$('wdAcct').value.trim()||'________________________';
+  const sym=$('wdSym').value.trim().toUpperCase();
+  const filer=$('wdFiler').value==='1';
+  const now=new Date();
+  const R=(l,v,bold)=>`<tr${bold?' class="b"':''}><td>${l}</td><td class="n">${v}</td></tr>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Withdrawal Request</title><style>
+    *{box-sizing:border-box} body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;margin:0;padding:34px 40px;font-size:13px;line-height:1.5}
+    .top{border-bottom:2px solid #1a3d6d;padding-bottom:12px;margin-bottom:18px}
+    h1{font-size:19px;color:#1a3d6d;margin:0}
+    .muted{color:#666;font-size:11.5px;margin-top:3px}
+    .meta{margin:14px 0}
+    .meta div{margin:4px 0}
+    .meta b{display:inline-block;min-width:150px;color:#333}
+    table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px}
+    td{border:1px solid #dcdcdc;padding:7px 10px}
+    td.n{text-align:right;font-variant-numeric:tabular-nums}
+    tr.b td{font-weight:700;background:#f4f7fb;border-top:2px solid #cdd8e6}
+    .sign{margin-top:48px;display:flex;justify-content:space-between}
+    .sign .box{width:44%;border-top:1px solid #333;padding-top:6px;font-size:11.5px;color:#444}
+    .foot{color:#999;font-size:10px;margin-top:26px;border-top:1px solid #e2e2e2;padding-top:8px}
+    @media print{body{padding:16mm}}
+  </style></head><body>
+  <div class="top"><h1>Share Sale &amp; Withdrawal Request</h1>
+    <div class="muted">To: ${broker} — Broker / TREC Holder &nbsp;·&nbsp; Date: ${now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+  <div class="meta">
+    <div><b>Account Title:</b> ${title}</div>
+    <div><b>Account Number:</b> ${acctNo}</div>
+    <div><b>Tax status:</b> ${filer?'Filer (ATL)':'Non-filer'}</div>
+  </div>
+  <p>Kindly execute the sale of the following share(s) from my account and process withdrawal of the <b>net proceeds</b> to my registered bank account:</p>
+  <table>
+    ${R('Security / Symbol', sym||'—')}
+    ${R('Shares to sell', w.qty.toLocaleString('en-PK'))}
+    ${R('Approx. sell price (per share)', fmt(w.sell))}
+    ${R('Gross proceeds', rs(w.gross))}
+    ${R('Less: Brokerage commission ('+(w.commR*100).toFixed(2)+'%)', '−'+rs(w.commission))}
+    ${R('Less: SST on commission ('+(w.sstR*100)+'%)', '−'+rs(w.sst))}
+    ${R('Less: CDC + exchange fee', '−'+rs(w.cdc))}
+    ${R('Capital gain (sell − buy)', (w.gain>=0?'+':'−')+rs(Math.abs(w.gain)))}
+    ${R('Less: Capital Gains Tax ('+(w.cgtR*100)+'% on gain)', '−'+rs(w.cgt))}
+    ${R('Estimated net amount receivable', rs(w.net), true)}
+  </table>
+  <div class="sign">
+    <div class="box">Account Holder / Authorized Signatory<br>(Name &amp; Signature)</div>
+    <div class="box">Date</div>
+  </div>
+  <div class="foot">Figures are estimates for reference. Actual brokerage, CDC/exchange charges and Capital Gains Tax (deducted by NCCPL at settlement under Section 37A) will apply as per the broker's schedule and prevailing FBR rates. Generated from PSX Dashboard — not tax or investment advice.</div>
+  </body></html>`;
+  const win=window.open('','_blank');
+  if(!win){ alert('Popup block ho gaya — is site ke liye popups allow karein, phir dobara dabayein.'); return; }
+  win.document.write(html); win.document.close(); win.focus();
+  setTimeout(()=>{ try{ win.print(); }catch(e){} }, 500);
+}
+
+// ===== TRADE INSTRUCTION (BUY/SELL ORDER) =====
+let tiLines=[];
+function tiFillAcct(){ const a=acct[$('tiBroker').value]||{}; $('tiTitle').value=a.t||''; $('tiAcct').value=a.n||''; }
+function tiRender(){
+  if(!$('tiTable')) return;
+  if(!tiLines.length){ $('tiTable').style.display='none'; $('tiEmpty').style.display='block'; return; }
+  $('tiEmpty').style.display='none'; $('tiTable').style.display='table';
+  $('tiBody').innerHTML=tiLines.map((l,i)=>{
+    const val=(l.price&&l.qty)?l.price*l.qty:null;
+    return `<tr><td><b class="${l.act==='BUY'?'up':'down'}">${l.act}</b></td><td class="l">${l.s}</td>`+
+      `<td>${l.qty?l.qty.toLocaleString('en-PK'):'—'}</td><td>${l.price?fmt(l.price):'Market'}</td>`+
+      `<td>${val!=null?rs(val):'—'}</td><td><button class="pf-ic del" data-ti="${i}" title="Remove">✕</button></td></tr>`;
+  }).join('');
+}
+if($('tiBroker')){
+  $('tiBroker').addEventListener('change',tiFillAcct);
+  ['tiTitle','tiAcct'].forEach(id=>$(id).addEventListener('input',()=>{ acct[$('tiBroker').value]={t:$('tiTitle').value.trim(),n:$('tiAcct').value.trim()}; store.set('psx:acct',acct); }));
+  $('tiAdd').addEventListener('click',()=>{
+    const s=$('tiSym').value.trim().toUpperCase(), qty=parseFloat($('tiQty').value)||0, price=parseFloat($('tiPrice').value)||0;
+    if(!s){ alert('Symbol daalein.'); return; }
+    tiLines.push({act:$('tiAct').value, s, qty, price:price||0});
+    $('tiSym').value=$('tiQty').value=$('tiPrice').value=''; tiRender(); $('tiSym').focus();
+  });
+  $('tiBody').addEventListener('click',e=>{ const b=e.target.closest('[data-ti]'); if(!b)return; tiLines.splice(+b.dataset.ti,1); tiRender(); });
+  $('tiClear').addEventListener('click',()=>{ if(tiLines.length&&confirm('Saari lines clear karein?')){ tiLines=[]; tiRender(); } });
+  $('tiPdf').addEventListener('click',genTiPdf);
+}
+function genTiPdf(){
+  if(!tiLines.length){ alert('Pehle order lines add karein.'); return; }
+  const broker=$('tiBroker').value;
+  const title=$('tiTitle').value.trim()||'________________________';
+  const acctNo=$('tiAcct').value.trim()||'________________________';
+  const budget=parseFloat($('tiBudget').value)||0, note=$('tiNote').value.trim();
+  const now=new Date(); let totVal=0;
+  const rows=tiLines.map(l=>{ const val=(l.price&&l.qty)?l.price*l.qty:0; totVal+=val;
+    return `<tr><td class="${l.act==='BUY'?'':'sell'}"><b>${l.act}</b></td><td>${l.s}</td>`+
+      `<td class="n">${l.qty?l.qty.toLocaleString('en-PK'):'—'}</td><td class="n">${l.price?fmt(l.price):'Market'}</td>`+
+      `<td class="n">${val?rs(val):'—'}</td></tr>`; }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Trade Instruction</title><style>
+    *{box-sizing:border-box} body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;margin:0;padding:34px 40px;font-size:13px;line-height:1.5}
+    .top{border-bottom:2px solid #1a3d6d;padding-bottom:12px;margin-bottom:18px}
+    h1{font-size:19px;color:#1a3d6d;margin:0}
+    .muted{color:#666;font-size:11.5px;margin-top:3px}
+    .meta div{margin:4px 0} .meta b{display:inline-block;min-width:150px;color:#333}
+    table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px}
+    th,td{border:1px solid #dcdcdc;padding:7px 10px;text-align:left}
+    th{background:#eef2f7;color:#333} td.n{text-align:right;font-variant-numeric:tabular-nums}
+    td.sell b{color:#b23b46} tfoot td{font-weight:700;background:#f4f7fb;border-top:2px solid #cdd8e6}
+    .note{background:#f7f9fc;border-left:3px solid #1a3d6d;padding:9px 12px;margin:10px 0;font-size:12.5px}
+    .sign{margin-top:52px;display:flex;justify-content:space-between}
+    .sign .box{width:44%;border-top:1px solid #333;padding-top:6px;font-size:11.5px;color:#444}
+    .foot{color:#999;font-size:10px;margin-top:26px;border-top:1px solid #e2e2e2;padding-top:8px}
+    @media print{body{padding:16mm}}
+  </style></head><body>
+  <div class="top"><h1>Trade Instruction — Buy / Sell Order</h1>
+    <div class="muted">To: ${broker} — Broker / TREC Holder &nbsp;·&nbsp; Date: ${now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+  <div class="meta">
+    <div><b>Account Title:</b> ${title}</div>
+    <div><b>Account Number:</b> ${acctNo}</div>
+    ${budget?`<div><b>Approved budget:</b> ${rs(budget)}</div>`:''}
+  </div>
+  <p>Kindly execute the following order(s) on my/our behalf as approved by management:</p>
+  <table><thead><tr><th>Action</th><th>Symbol</th><th style="text-align:right">Qty</th><th style="text-align:right">Price</th><th style="text-align:right">Approx value</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="4">Total approx value</td><td class="n">${rs(totVal)}</td></tr></tfoot></table>
+  ${note?`<div class="note"><b>Instruction:</b> ${note}</div>`:''}
+  <div class="sign">
+    <div class="box">Prepared by<br>(Name &amp; Signature)</div>
+    <div class="box">Approved by<br>(Name &amp; Signature)</div>
+  </div>
+  <div class="foot">Prices are indicative; market orders execute at prevailing market price. Applicable brokerage, CDC/exchange charges and taxes apply as per the broker's schedule and prevailing FBR rates. Generated from PSX Dashboard — not investment advice.</div>
+  </body></html>`;
+  const win=window.open('','_blank');
+  if(!win){ alert('Popup block ho gaya — is site ke liye popups allow karein, phir dobara dabayein.'); return; }
+  win.document.write(html); win.document.close(); win.focus();
+  setTimeout(()=>{ try{ win.print(); }catch(e){} }, 500);
+}
+
+
+function isLive(sym){ return curPrice(sym)!=null; }
+
+function openEdit(i){
+  const p=portfolio[i]; editIdx=i;
+  $('pfSym').value=p.s;
+  $('pfQty').value=p.qty;
+  $('pfCost').value=(+p.cost).toFixed(2);
+  $('pfCur').value = isLive(p.s) ? '' : (p.cur!=null?p.cur:'');
+  $('pfTarget').value = p.target!=null?p.target:'';
+  $('pfPlatform').value = p.platform||'';
+  $('pfDate').value = p.date||'';
+  $('pfNotes').value = p.notes||'';
+  $('pfAdd').textContent=UPD_LBL; showForm(true); symHint(); updatePreview();
+  $('pfForm').scrollIntoView({behavior:'smooth',block:'nearest'}); $('pfSym').focus();
+}
+// Row actions (delegated)
+$('pfBody').addEventListener('click', async (e)=>{
+  const btn=e.target.closest('[data-act]'); if(!btn) return;
+  const i=+btn.dataset.i, act=btn.dataset.act;
+  if(act==='chart'){ window.open('https://dps.psx.com.pk/company/'+encodeURIComponent(portfolio[i].s),'_blank','noopener'); return; }
+  if(!canEdit) return;
+  if(act==='edit'){ openEdit(i); }
+  else if(act==='sell'){ openSell(i); }
+  else if(act==='del'){
+    if(!confirm(`${portfolio[i].s} delete kar dein?`)) return;
+    portfolio.splice(i,1);
+    if(editIdx===i){ editIdx=-1; clearAddForm(); showForm(false); $('pfAdd').textContent='Save'; }
+    await store.set('psx:portfolio',portfolio); renderPortfolio();
+  }
+});
+
+// ===== SELL / REALIZED =====
+let sellIdx=-1;
+function openSell(i){
+  const p=portfolio[i]; if(!p) return; sellIdx=i;
+  const cur=curPrice(p.s);
+  $('sellInfo').innerHTML=`<b>${p.s}</b> · ${p.platform||'—'} &nbsp;|&nbsp; Held: <b>${p.qty}</b> @ avg cost <b>${rs(p.cost)}</b>`;
+  $('sellQty').value=p.qty; $('sellQty').max=p.qty;
+  $('sellPrice').value=cur!=null?cur:p.cost;
+  sellPreview(); $('sellModal').classList.add('show'); setTimeout(()=>$('sellPrice').focus(),50);
+}
+function sellPreview(){
+  const p=portfolio[sellIdx]; if(!p){$('sellPreview').textContent='';return;}
+  let q=+$('sellQty').value||0, sp=+$('sellPrice').value||0;
+  if(q>p.qty)q=p.qty;
+  const invested=p.cost*q, soldFor=sp*q, pnl=(sp-p.cost)*q, pct=invested?pnl/invested*100:0;
+  const col=pnl>=0?'var(--up)':'var(--down)';
+  $('sellPreview').innerHTML=`Selling <b>${q}</b> of ${p.qty} · Invested ${rs(invested)} → Sold for ${rs(soldFor)}<br>`+
+    `Realized P/L: <b style="color:${col}">${pnl>=0?'+':''}${rs(pnl)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</b>`+
+    (q<p.qty?` &nbsp;·&nbsp; <span class="muted">${p.qty-q} shares holding mein rahenge</span>`:` &nbsp;·&nbsp; <span class="muted">poori position book ho jayegi</span>`);
+}
+$('sellQty').addEventListener('input',sellPreview);
+$('sellPrice').addEventListener('input',sellPreview);
+$('sellCancel').addEventListener('click',()=>{ $('sellModal').classList.remove('show'); sellIdx=-1; });
+$('sellModal').addEventListener('click',e=>{ if(e.target===$('sellModal')){$('sellModal').classList.remove('show'); sellIdx=-1;} });
+$('sellConfirm').addEventListener('click',async()=>{
+  if(!canEdit||sellIdx<0)return; const p=portfolio[sellIdx]; if(!p)return;
+  let q=+$('sellQty').value||0, sp=+$('sellPrice').value;
+  if(!(q>0)){ alert('Qty to sell theek daalein.'); return; }
+  if(q>p.qty)q=p.qty;
+  if(!(sp>=0)||$('sellPrice').value===''){ alert('Sell price daalein.'); return; }
+  const pnl=(sp-p.cost)*q;
+  realized.push({ date: todayStr(), s:p.s, platform:p.platform||'', qty:q, cost:p.cost, sell:sp, pnl });
+  if(q>=p.qty){ portfolio.splice(sellIdx,1); } else { p.qty=+(p.qty-q); }
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  $('sellModal').classList.remove('show'); sellIdx=-1;
+  renderPortfolio(); renderRealized();
+});
+
+function setRlzCard(){
+  const el=$('sRlz'); if(!el) return;
+  if(!realized.length){ el.textContent=rs(0); el.className='v'; return; }
+  const tot=realized.reduce((a,r)=>a+(r.sell-r.cost)*r.qty,0);
+  el.innerHTML=`<span class="${cls(tot)}">${tot>=0?'+':''}${rs(tot)}</span>`;
+}
+
+function renderInc(){
+  if(!$('incCap')) return;
+  const cap = portfolio.reduce((a,p)=>a+(p.qty*p.cost),0);
+  const real = realized.reduce((a,r)=>a+((r.sell-r.cost)*r.qty),0);
+  const tgt = 0.05*cap;
+  const inc = real>0 ? 0.05*real : 0;
+  const pctOfTgt = tgt>0 ? real/tgt*100 : 0;
+  const capPct = cap>0 ? real/cap*100 : 0;
+  $('incCap').textContent = rs(cap);
+  $('incTgt').textContent = rs(tgt);
+  $('incReal').innerHTML = `<span class="${cls(real)}">${real>=0?'+':''}${rs(real)}</span>`;
+  $('incAmt').innerHTML = `<span class="up">${rs(inc)}</span>`;
+  const fillPct = Math.max(0, Math.min(100, pctOfTgt));
+  $('incFill').style.width = fillPct+'%';
+  $('incFill').style.background = pctOfTgt>=100?'var(--up)':(pctOfTgt>=0?'var(--accent)':'var(--down)');
+  $('incNote').innerHTML = `Realized = capital ka <b>${capPct.toFixed(2)}%</b> · 5% target ka <b>${pctOfTgt.toFixed(0)}%</b> ho chuka. `+
+    (pctOfTgt>=100?`🎉 Target cross! (${(capPct-5).toFixed(2)}% extra over 5%)`:`Target tak ${Math.max(0,100-fillPct).toFixed(0)}% baaki.`)+
+    ` Incentive = realized profit ka 5% (booked).`;
+  renderMcMonths();
+}
+
+function dlSaleJournal(){
+  if(!realized.length){ alert('Abhi koi sold trade nahi.'); return; }
+  const hdr=['S.No','Sold Date','Asset Class','Asset Name','Ticker','Platform','Quantity','Buy Price','Buy Fee','Cost Basis','Sell Price','Sell Fee','Gross Proceeds','Net Proceeds','Realized P/L','ROI %'];
+  const body=realized.map((r,i)=>{
+    const inv=r.cost*r.qty, sold=r.sell*r.qty, pnl=(r.sell-r.cost)*r.qty, roi=inv?pnl/inv*100:0;
+    return [i+1, r.date||'', 'PSX Stock', (nameOf(r.s)||r.s), r.s, r.platform||'', r.qty, (+r.cost).toFixed(4), 0, Math.round(inv), (+r.sell).toFixed(4), 0, Math.round(sold), Math.round(sold), Math.round(pnl), roi.toFixed(1)+'%'];
+  });
+  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const csv=[hdr,...body].map(row=>row.map(esc).join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='PSX-Sale-Journal.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+$('dlSale') && $('dlSale').addEventListener('click', dlSaleJournal);
+
+// ===== MONTHLY CLOSURE & REPORT =====
+const MN_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mcMonthsList(){
+  const dates=[];
+  realized.forEach(r=>{ if(r.date) dates.push(String(r.date).slice(0,7)); });
+  portfolio.forEach(p=>{ if(p.date) dates.push(String(p.date).slice(0,7)); });
+  dates.sort();
+  let start = (dates.length && dates[0]<'2026-03') ? dates[0] : '2026-03';
+  const [sy,sm]=start.split('-').map(Number);
+  const now=new Date(); const ey=now.getFullYear(), em=now.getMonth()+1;
+  const out=[]; let y=sy, m=sm;
+  while(y<ey || (y===ey && m<=em)){ out.push(y+'-'+String(m).padStart(2,'0')); m++; if(m>12){m=1;y++;} }
+  return out.reverse();
+}
+function mcLabel(ym){ const [y,m]=ym.split('-'); return MN_NAMES[+m-1]+' '+y; }
+// Full dated ledger history (all brokers) — monthly closure isi se compute hota hai
+const TXLOG=[
+ ['2026-03-13','Arif Habib (AHL)','BUY','BAFL',8600,996150.95],
+ ['2026-03-13','Arif Habib (AHL)','BUY','FFC',1900,964171.80],
+ ['2026-03-13','Arif Habib (AHL)','BUY','NBP',4000,985717.40],
+ ['2026-03-13','Arif Habib (AHL)','BUY','OGDC',3500,984884.36],
+ ['2026-03-13','Arif Habib (AHL)','BUY','PPL',4700,996514.96],
+ ['2026-04-22','Arif Habib (AHL)','BUY','OGDC',200,65694.11],
+ ['2026-06-11','Arif Habib (AHL)','BUY','FFC',800,446965.67],
+ ['2026-06-11','Arif Habib (AHL)','BUY','JVDC',600,90759.29],
+ ['2026-06-11','Arif Habib (AHL)','BUY','MCB',700,284651.66],
+ ['2026-06-11','Arif Habib (AHL)','BUY','TPLP',18000,200650.60],
+ ['2026-06-11','Arif Habib (AHL)','BUY','WAVESAPP',10500,100406.25],
+ ['2026-07-13','KTrade','BUY','ENGROH',1200,350403.48],
+ ['2026-07-13','KTrade','BUY','SYS',1672,250373.21],
+ ['2026-07-13','KTrade','BUY','ILP',478,50018.02],
+ ['2026-07-13','KTrade','BUY','NML',312,49923.98],
+ ['2026-07-13','KTrade','BUY','FFC',1140,650304.26],
+ ['2026-07-13','KTrade','BUY','MEBL',910,496004.07],
+ ['2026-07-13','KTrade','BUY','FCCL',3385,200229.15],
+ ['2026-07-13','KTrade','BUY','HUBC',2150,500715.67],
+ ['2026-07-13','KTrade','BUY','OGDC',1799,600983.35],
+ ['2026-07-13','KTrade','BUY','MCB',360,149293.49],
+ ['2026-07-13','KTrade','BUY','LUCK',849,400482.02],
+ ['2026-07-13','KTrade','BUY','UBL',1185,550195.02],
+ ['2026-07-13','KTrade','BUY','NBP',1720,349417.70],
+ ['2026-07-13','Arif Habib (AHL)','BONUS','BAFL',8600,0],
+ ['2026-07-14','Arif Habib (AHL)','SELL','NBP',4000,816733.44],
+ ['2026-07-14','Arif Habib (AHL)','SELL','BAFL',17200,997509.18],
+ ['2026-07-14','Arif Habib (AHL)','SELL','MCB',700,289094.14],
+ ['2026-07-14','Arif Habib (AHL)','BUY','MEBL',4000,2192586.38],
+ ['2026-07-14','KTrade','BUY','MEBL',1945,1069636.17],
+ ['2026-07-14','KTrade','SELL','NBP',1720,355024.91],
+ ['2026-07-14','KTrade','SELL','MCB',360,148427.13],
+ ['2026-07-14','KTrade','SELL','UBL',1185,566100.00],
+ ['2026-07-15','Al Meezan (Funds)','BUY','MIF',12016.7889,2000000.00],
+ ['2026-07-30','KTrade','BUY','FFC',266,150149.58],
+ ['2026-07-30','KTrade','BUY','MLCF',531,49994.79],
+ ['2026-07-30','KTrade','BUY','OGDC',317,99995.51],
+ ['2026-07-30','KTrade','BUY','LUCK',170,74748.22],
+ ['2026-07-30','KTrade','BUY','MARI',192,124822.95],
+ ['2026-08-04','Orbit Securities','BUY','SEARL',10000,902537.38],
+ ['2026-09-07','Arif Habib (AHL)','SELL','OGDC',3690,1216764.34],
+ ['2026-09-07','Arif Habib (AHL)','SELL','PPL',4690,1057629.46],
+ ['2026-09-07','Arif Habib (AHL)','SELL','TPLP',17990,260090.43],
+ ['2026-09-14','Arif Habib (AHL)','BUY','DGKC',7500,1458096.20],
+ ['2026-09-14','Arif Habib (AHL)','BUY','FFC',2800,1495660.37],
+ ['2026-09-14','Arif Habib (AHL)','BUY','MLCF',15500,1462455.60],
+ ['2026-09-14','Arif Habib (AHL)','BUY','SSGC',21000,497205.05],
+ ['2026-09-18','KTrade','SELL','MEBL',2855,1574132.68],
+ ['2026-09-21','Arif Habib (AHL)','SELL','DGKC',7500,1477010.36],
+ ['2026-09-21','Arif Habib (AHL)','SELL','FFC',5500,2933828.01],
+ ['2026-09-21','Arif Habib (AHL)','SELL','MEBL',4000,2200577.64],
+ ['2026-09-21','Arif Habib (AHL)','SELL','MLCF',15500,1465394.57],
+ ['2026-09-21','Arif Habib (AHL)','SELL','SSGC',21000,505540.77],
+];
+function mcData(ym){
+  const tx=TXLOG.slice().sort((a,b)=> a[0]===b[0] ? ((a[2]==='SELL'?1:0)-(b[2]==='SELL'?1:0)) : (a[0]<b[0]?-1:1));
+  const inv={}; const value=()=>Object.values(inv).reduce((a,v)=>a+(v.qty>1e-9?v.cost:0),0);
+  let opening=0, buysM=0, realizedM=0; const sells=[]; let openCap=(ym==='all');
+  for(const t of tx){
+    const [d,br,act,sym,qty,amt]=t; const m=d.slice(0,7);
+    if(ym!=='all' && !openCap && m>=ym){ opening=value(); openCap=true; }
+    if(ym!=='all' && m>ym) break;
+    const k=br+'|'+sym; if(!inv[k]) inv[k]={qty:0,cost:0,br,sym};
+    const inMonth=(ym==='all')||(m===ym);
+    if(act==='BUY'){ inv[k].qty+=qty; inv[k].cost+=amt; if(inMonth) buysM+=amt; }
+    else if(act==='BONUS'){ inv[k].qty+=qty; }
+    else if(act==='SELL'){ const avg=inv[k].qty>0?inv[k].cost/inv[k].qty:0; const co=avg*qty;
+      inv[k].qty-=qty; inv[k].cost-=co;
+      if(inMonth){ realizedM+=(amt-co); sells.push({date:d,s:sym,platform:br,qty,cost:avg,sell:amt/qty,pnl:amt-co}); } }
+  }
+  const closing=value();
+  const invList=Object.values(inv).filter(v=>v.qty>1e-9).map(v=>({s:v.sym,platform:v.br,qty:v.qty,cost:v.cost/v.qty,val:v.cost}))
+                 .sort((a,b)=>b.val-a.val);
+  const invTot=invList.reduce((a,x)=>a+x.val,0);
+  const cap=closing, target=0.05*cap, incentive=realizedM>0?0.05*realizedM:0;
+  return {opening,buysM,sells,realizedM,closing,inv:invList,invTot,cap,target,incentive};
+}
+function renderMcPreview(){
+  if(!$('mcPreview')) return;
+  const ym=$('mcMonth').value; const d=mcData(ym);
+  const capPct=d.cap?d.realizedM/d.cap*100:0;
+  $('mcPreview').innerHTML=`<div class="mc-preview-box">
+    <div class="mc-row"><span>Month</span><b>${ym==='all'?'All months':mcLabel(ym)}</b></div>
+    <div class="mc-row"><span>Opening inventory</span><b>${rs(d.opening)}</b></div>
+    <div class="mc-row"><span>Buys (month)</span><b>${rs(d.buysM)}</b></div>
+    <div class="mc-row"><span>Sells booked</span><b>${d.sells.length}</b></div>
+    <div class="mc-row"><span>Realized P&L (month)</span><b class="${cls(d.realizedM)}">${d.realizedM>=0?'+':''}${rs(d.realizedM)}</b></div>
+    <div class="mc-row"><span>Capital (month-end value)</span><b>${rs(d.cap)}</b></div>
+    <div class="mc-row"><span>5% Target</span><b>${rs(d.target)}</b> <span class="muted">(${capPct.toFixed(2)}% done)</span></div>
+    <div class="mc-row"><span>Incentive (5% of profit)</span><b class="up">${rs(d.incentive)}</b></div>
+    <div class="mc-row"><span>Closing inventory (carry-forward)</span><b>${d.inv.length} pos · ${rs(d.invTot)}</b></div>
+  </div>`;
+}
+function mcReportHTML(ym){
+  const d=mcData(ym); const now=new Date();
+  const capPct=d.cap?d.realizedM/d.cap*100:0;
+  const sellRows=d.sells.map(r=>{const inv=r.cost*r.qty,pnl=r.pnl,roi=inv?pnl/inv*100:0;
+    return `<tr><td>${r.date||''}</td><td>${r.s}</td><td>${r.platform||''}</td><td class="n">${r.qty.toLocaleString('en-PK')}</td><td class="n">${fmt(r.cost)}</td><td class="n">${fmt(r.sell)}</td><td class="n" style="color:${pnl>=0?'#1a7f37':'#c1121f'}">${pnl>=0?'+':''}${rs(pnl)}</td><td class="n">${roi>=0?'+':''}${roi.toFixed(1)}%</td></tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;color:#888">Is month koi sell nahi</td></tr>';
+  const invRows=d.inv.map(x=>`<tr><td>${x.s}</td><td>${x.platform}</td><td class="n">${x.qty.toLocaleString('en-PK')}</td><td class="n">${fmt(x.cost)}</td><td class="n">${rs(x.val)}</td></tr>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Monthly Closure ${ym}</title><style>
+    *{box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;margin:0;padding:32px 40px;font-size:13px}
+    h1{font-size:20px;color:#1a3d6d;margin:0}.sub{color:#666;font-size:12px;margin:3px 0 16px}
+    .cards{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+    .card{flex:1;min-width:140px;border:1px solid #dcdcdc;border-radius:8px;padding:10px 12px}
+    .card .k{font-size:11px;color:#666}.card .v{font-size:16px;font-weight:700;margin-top:3px}
+    table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:12px}
+    th,td{border:1px solid #dcdcdc;padding:6px 8px;text-align:left}th{background:#eef2f7}
+    td.n{text-align:right;font-variant-numeric:tabular-nums}h3{color:#1a3d6d;font-size:14px;margin:16px 0 6px}
+    .foot{color:#999;font-size:10px;margin-top:24px;border-top:1px solid #e2e2e2;padding-top:8px}
+    @media print{body{padding:14mm}}
+  </style></head><body>
+  <h1>Monthly Closure — ${ym==='all'?'All Months':mcLabel(ym)}</h1>
+  <div class="sub">INAMULLAH ABDULLAH · PSX Portfolio · Generated ${now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+  <div class="cards">
+    <div class="card"><div class="k">Opening Inventory</div><div class="v">${rs(d.opening)}</div></div>
+    <div class="card"><div class="k">Buys (month)</div><div class="v">${rs(d.buysM)}</div></div>
+    <div class="card"><div class="k">Realized P&L</div><div class="v" style="color:${d.realizedM>=0?'#1a7f37':'#c1121f'}">${d.realizedM>=0?'+':''}${rs(d.realizedM)}</div></div>
+    <div class="card"><div class="k">Closing Inventory</div><div class="v">${rs(d.closing)}</div></div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="k">Capital (month-end)</div><div class="v">${rs(d.cap)}</div></div>
+    <div class="card"><div class="k">5% Target</div><div class="v">${rs(d.target)}</div></div>
+    <div class="card"><div class="k">Incentive (5%)</div><div class="v" style="color:#1a7f37">${rs(d.incentive)}</div></div>
+    <div class="card"><div class="k">Realized % of capital</div><div class="v">${capPct.toFixed(2)}%</div></div>
+  </div>
+  <h3>Sells booked (${d.sells.length})</h3>
+  <table><thead><tr><th>Date</th><th>Stock</th><th>Platform</th><th style="text-align:right">Qty</th><th style="text-align:right">Buy</th><th style="text-align:right">Sell</th><th style="text-align:right">Realized P/L</th><th style="text-align:right">ROI%</th></tr></thead><tbody>${sellRows}</tbody></table>
+  <h3>Closing Inventory — carried to next month (${d.inv.length} positions · ${rs(d.invTot)})</h3>
+  <table><thead><tr><th>Stock</th><th>Platform</th><th style="text-align:right">Qty</th><th style="text-align:right">Avg Cost</th><th style="text-align:right">Cost Value</th></tr></thead><tbody>${invRows}</tbody></table>
+  <div class="foot">Built from recorded broker-ledger transactions. Inventory carry-forward at cost. Realized = booked profit; Incentive = 5% of realized profit. Informational only, not investment advice.</div>
+  </body></html>`;
+}
+if($('mcMonth')){
+  $('mcMonth').addEventListener('change',renderMcPreview);
+  $('mcPdf').addEventListener('click',()=>{
+    const w=window.open('','_blank'); if(!w){alert('Popup allow karein.');return;}
+    w.document.write(mcReportHTML($('mcMonth').value)); w.document.close(); w.focus(); setTimeout(()=>{try{w.print();}catch(e){}},500);
+  });
+  $('mcCsv').addEventListener('click',()=>{
+    const ym=$('mcMonth').value; const d=mcData(ym);
+    const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
+    const lines=[['Monthly Closure',ym==='all'?'All':mcLabel(ym)],[],
+      ['Realized P&L (month)',Math.round(d.realizedM)],['Capital (invested)',Math.round(d.cap)],['5% Target',Math.round(d.target)],['Incentive (5%)',Math.round(d.incentive)],[],
+      ['SELLS'],['Date','Stock','Platform','Qty','Buy','Sell','Realized P/L','ROI%']];
+    d.sells.forEach(r=>{const inv=r.cost*r.qty,pnl=(r.sell-r.cost)*r.qty,roi=inv?pnl/inv*100:0;lines.push([r.date||'',r.s,r.platform||'',r.qty,(+r.cost).toFixed(4),(+r.sell).toFixed(4),Math.round(pnl),roi.toFixed(1)+'%']);});
+    lines.push([],['CLOSING INVENTORY (carry-forward)'],['Stock','Platform','Qty','Avg Cost','Cost Value']);
+    d.inv.forEach(x=>lines.push([x.s,x.platform,x.qty,(+x.cost).toFixed(4),Math.round(x.val)]));
+    const csv=lines.map(row=>row.map(esc).join(',')).join('\r\n');
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Monthly-Closure-'+ym+'.csv';document.body.appendChild(a);a.click();a.remove();
+  });
+}
+function renderMcMonths(){
+  if(!$('mcMonth'))return;
+  const cur=$('mcMonth').value;
+  const opts=mcMonthsList().map(ym=>`<option value="${ym}">${mcLabel(ym)}</option>`).join('')+`<option value="all">All months</option>`;
+  $('mcMonth').innerHTML=opts;
+  if(cur) $('mcMonth').value=cur;
+  renderMcPreview();
+}
+
+function renderRealized(){
+  const panel=$('realizedPanel'); if(!panel) return;
+  if(!realized.length){ panel.style.display='none'; return; }
+  panel.style.display='';
+  let tot=0, totInv=0;
+  const rows=realized.map((r,i)=>{
+    const inv=r.cost*r.qty, sold=r.sell*r.qty, pnl=(r.sell-r.cost)*r.qty, pct=inv?pnl/inv*100:0;
+    tot+=pnl; totInv+=inv;
+    const col=pnl>=0?'up':'down';
+    return `<tr>
+      <td>${r.date||'—'}</td><td class="l"><b>${r.s}</b></td><td>${r.platform||'—'}</td>
+      <td>${r.qty}</td><td>${r.cost.toFixed(2)}</td><td>${r.sell.toFixed(2)}</td>
+      <td>${rs(inv)}</td><td>${rs(sold)}</td>
+      <td class="${col}">${pnl>=0?'+':''}${rs(pnl)}</td><td class="${col}">${pct>=0?'+':''}${pct.toFixed(1)}%</td>
+      <td class="pf-actcol owner-only">${canEdit?`<button class="pf-ic" data-rlzedit="${i}" title="Edit">✎</button><button class="pf-ic del" data-rlz="${i}" title="Remove record">✕</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  $('rlzBody').innerHTML=rows;
+  const totPct=totInv?tot/totInv*100:0;
+  $('rlzTotal').innerHTML=`Total realized: <span class="${tot>=0?'up':'down'}">${tot>=0?'+':''}${rs(tot)} (${totPct>=0?'+':''}${totPct.toFixed(1)}%)</span>`;
+}
+// remove a realized record (owner only)
+$('rlzBody').addEventListener('click',async e=>{
+  const ed=e.target.closest('[data-rlzedit]');
+  if(ed && canEdit){ openRlzEdit(+ed.dataset.rlzedit); return; }
+  const b=e.target.closest('[data-rlz]'); if(!b||!canEdit)return;
+  const i=+b.dataset.rlz;
+  if(!confirm('Ye record history se hata dein? (boss ko dikhna band ho jayega)'))return;
+  realized.splice(i,1); await store.set('psx:realized',realized); renderRealized(); renderPortfolio(); renderInc();
+});
+// ===== Add / Edit a sell record (manual CRUD on Sold History) =====
+let rlzEditIdx=-1;
+function rlzPreview(){
+  const q=+$('rlzQty').value||0, c=+$('rlzCost').value||0, s=+$('rlzSell').value||0;
+  const pnl=(s-c)*q, inv=c*q, pct=inv?pnl/inv*100:0;
+  $('rlzPreview').innerHTML= q>0 ? `Realized P/L: <b style="color:${pnl>=0?'var(--up)':'var(--down)'}">${pnl>=0?'+':''}${rs(pnl)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</b>` : 'Qty, buy cost aur sell price daalein.';
+}
+function openRlzEdit(i){
+  rlzEditIdx=i; const r=realized[i]||{};
+  $('rlzModalTitle').textContent = i>=0?'✎ Edit sell record':'＋ Add sell record';
+  $('rlzDate').value=r.date||todayStr();
+  $('rlzSym').value=r.s||''; $('rlzPlat').value=r.platform||'';
+  $('rlzQty').value=r.qty||''; $('rlzCost').value=(r.cost!=null?r.cost:''); $('rlzSell').value=(r.sell!=null?r.sell:'');
+  rlzPreview(); $('rlzModal').classList.add('show');
+}
+if($('addSellBtn')){
+  $('addSellBtn').addEventListener('click',()=>{ if(!canEdit)return; openRlzEdit(-1); });
+  ['rlzQty','rlzCost','rlzSell'].forEach(id=>$(id).addEventListener('input',rlzPreview));
+  $('rlzCancel').addEventListener('click',()=>{ $('rlzModal').classList.remove('show'); rlzEditIdx=-1; });
+  $('rlzModal').addEventListener('click',e=>{ if(e.target===$('rlzModal')){$('rlzModal').classList.remove('show'); rlzEditIdx=-1;} });
+  $('rlzSave').addEventListener('click',async()=>{
+    if(!canEdit)return;
+    const s=$('rlzSym').value.trim().toUpperCase(), q=+$('rlzQty').value||0, c=+$('rlzCost').value, sp=+$('rlzSell').value;
+    if(!s){ alert('Symbol daalein.'); return; }
+    if(!(q>0)){ alert('Qty theek daalein.'); return; }
+    if($('rlzCost').value===''||$('rlzSell').value===''){ alert('Buy cost aur sell price daalein.'); return; }
+    const rec={date:$('rlzDate').value||todayStr(), s, platform:$('rlzPlat').value.trim(), qty:q, cost:c, sell:sp, pnl:(sp-c)*q};
+    if(rlzEditIdx>=0){
+      realized[rlzEditIdx]=rec; // edit = sirf record update (holding ko haath nahi lagata)
+      await store.set('psx:realized',realized);
+    } else {
+      realized.unshift(rec);
+      // NEW sell: matching holding se qty kam karo (500 - 300 = 200)
+      const idx=portfolio.findIndex(p=>p.s===rec.s && (p.platform||'')===rec.platform);
+      if(idx>=0 && portfolio[idx].qty>=rec.qty){
+        if(portfolio[idx].qty===rec.qty) portfolio.splice(idx,1); else portfolio[idx].qty-=rec.qty;
+        await store.set('psx:portfolio',portfolio);
+      } else if(idx>=0){
+        alert(`Note: ${rec.s} (${rec.platform||'—'}) mein sirf ${portfolio[idx].qty} shares hain — holding kam nahi ki (record phir bhi add ho gaya). Qty check kar lein.`);
+      } else {
+        alert(`Note: ${rec.s} (${rec.platform||'—'}) holdings mein nahi mila — sirf record add hua, kisi holding se kam nahi kiya.`);
+      }
+      await store.set('psx:realized',realized);
+    }
+    $('rlzModal').classList.remove('show'); rlzEditIdx=-1;
+    renderRealized(); renderPortfolio(); renderInc();
+  });
+}
+
+function renderPortfolio(){
+  if(!portfolio.length){
+    $('pfTable').style.display='none'; $('pfEmpty').style.display='block'; $('allocWrap').style.display='none';
+    $('brokerSum').style.display='none';
+    ['sInv','sCur'].forEach(id=>{$(id).textContent=rs(0);});
+    $('sInvK').textContent='Invested';
+    $('sPnl').textContent=rs(0); $('sPnl').className='v';
+    $('sDay').textContent=rs(0); $('sDay').className='v';
+    setRlzCard(); renderInc(); return;
+  }
+  $('pfEmpty').style.display='none'; $('pfTable').style.display='table';
+  let inv=0, val=0, dayPnl=0;
+  const calc = portfolio.map(pos=>{
+    const cur=posCur(pos), iv=pos.qty*pos.cost, cv=pos.qty*cur, pnl=cv-iv, pct=iv?pnl/iv*100:0;
+    const dc=posDayChg(pos), prev=cur/(1+dc/100), dpnl=pos.qty*(cur-prev);
+    inv+=iv; val+=cv; dayPnl+=dpnl;
+    return {pos,cur,iv,cv,pnl,pct,dc,dpnl};
+  });
+  const rows = calc.map((r,i)=>{
+    const p=r.pos;
+    const meta=stock(p.s);
+    const nm = meta ? meta.n : p.s;
+    const tile = `<a class="pf-stock" href="https://www.tradingview.com/symbols/PSX-${p.s}/" target="_blank" rel="noopener" title="${p.s} ka chart kholein (TradingView)"><span class="pf-tile">${p.s.slice(0,4)}</span><span class="pf-nm"><b>${p.s}</b><small>${nm}</small></span></a>`;
+    const curCell = `<div class="pf-cur">${fmt(r.cur)}<small class="${cls(r.dc)}">${r.dc>0?'+':''}${r.dc.toFixed(2)}%</small></div>`;
+    const tgt = (p.target!=null && !isNaN(p.target)) ? fmt(p.target) : '—';
+    const platShort={'Arif Habib (AHL)':'AHL','Al Meezan (Funds)':'Meezan','Orbit Securities':'Orbit'};
+    const plat = p.platform ? `<span class="pf-plat" title="${p.platform}">${platShort[p.platform]||p.platform}</span>` : '—';
+    const date = p.date || '—';
+    const notes = p.notes ? `<span class="pf-notes" title="${p.notes.replace(/"/g,'&quot;')}">${p.notes}</span>` : '<span class="pf-notes muted">—</span>';
+    const acts = `<div class="pf-acts">`+
+      (canEdit ? `<button class="pf-ic sell" data-act="sell" data-i="${i}" title="Sell / book">₨↓</button>`+
+                 `<button class="pf-ic" data-act="edit" data-i="${i}" title="Edit">✎</button>`+
+                 `<button class="pf-ic del" data-act="del" data-i="${i}" title="Delete">✕</button>` : ``)+
+      `<button class="pf-ic chart" data-act="chart" data-i="${i}" title="PSX official page kholein">🅿</button></div>`;
+    return `<tr>
+      <td class="l">${tile}</td>
+      <td>${p.qty}</td>
+      <td>${fmt(p.cost)}</td>
+      <td>${curCell}</td>
+      <td>${rs(r.iv)}</td>
+      <td>${rs(r.cv)}</td>
+      <td class="${cls(r.pnl)}">${r.pnl>=0?'+':''}${rs(r.pnl)}</td>
+      <td class="${cls(r.pnl)}">${r.pnl>=0?'+':''}${r.pct.toFixed(1)}%</td>
+      <td>${tgt}</td>
+      <td>${plat}</td>
+      <td class="pf-date">${date}</td>
+      <td class="l">${notes}</td>
+      <td class="pf-actcol">${acts}</td>
+    </tr>`;
+  }).join('');
+  $('pfBody').innerHTML=rows;
+
+  const pnl=val-inv, pct=inv?pnl/inv*100:0;
+  $('sInvK').textContent = `Invested · ${portfolio.length} position${portfolio.length>1?'s':''}`;
+  $('sInv').textContent=rs(inv);
+  $('sCur').textContent=rs(val);
+  $('sPnl').innerHTML=`<span class="${cls(pnl)}">${pnl>=0?'+':''}${rs(pnl)} <span style="font-size:12px">(${pnl>=0?'+':''}${pct.toFixed(1)}%)</span></span>`;
+  const dayPct = (val-dayPnl)? dayPnl/(val-dayPnl)*100 : 0;
+  $('sDay').innerHTML=`<span class="${cls(dayPnl)}">${dayPnl>=0?'+':''}${rs(dayPnl)} <span style="font-size:12px">(${dayPnl>=0?'+':''}${dayPct.toFixed(2)}%)</span></span>`;
+  setRlzCard(); renderInc();
+
+  // broker-wise summary (for boss)
+  const byPlat={};
+  calc.forEach(r=>{
+    const k=r.pos.platform||'Other';
+    (byPlat[k]=byPlat[k]||{inv:0,cv:0,day:0,n:0});
+    byPlat[k].inv+=r.iv; byPlat[k].cv+=r.cv; byPlat[k].day+=r.dpnl; byPlat[k].n++;
+  });
+  const platKeys=Object.keys(byPlat).sort((a,b)=>byPlat[b].cv-byPlat[a].cv);
+  $('brokerSum').style.display = platKeys.length?'grid':'none';
+  $('brokerSum').innerHTML = platKeys.map(k=>{
+    const d=byPlat[k], pl=d.cv-d.inv, plp=d.inv?pl/d.inv*100:0;
+    return `<div class="bcard">
+      <div class="bh"><span class="bn">${k}</span><span class="bp">${d.n} position${d.n>1?'s':''}</span></div>
+      <div class="brow"><span>Invested</span><b>${rs(d.inv)}</b></div>
+      <div class="brow"><span>Current value</span><b>${rs(d.cv)}</b></div>
+      <div class="brow"><span>Today's P&amp;L</span><b class="${cls(d.day)}">${d.day>=0?'+':''}${rs(d.day)}</b></div>
+      <div class="bpnl"><span>Total P&amp;L</span><span class="${cls(pl)}">${pl>=0?'+':''}${rs(pl)} <span style="font-size:11px">(${pl>=0?'+':''}${plp.toFixed(1)}%)</span></span></div>
+    </div>`;
+  }).join('');
+
+  $('allocWrap').style.display = val>0?'block':'none';
+  if(val>0){
+    const segs = calc.map((r,i)=>({s:r.pos.s, w:r.cv/val*100, c:ALLOC_COLORS[i%ALLOC_COLORS.length]}))
+                     .sort((a,b)=>b.w-a.w);
+    $('allocBar').innerHTML = segs.map(x=>`<div class="alloc-seg" style="width:${x.w}%;background:${x.c}" title="${x.s} ${x.w.toFixed(1)}%"></div>`).join('');
+    $('allocLegend').innerHTML = segs.map(x=>`<span class="li"><span class="sw" style="background:${x.c}"></span><b>${x.s}</b> ${x.w.toFixed(1)}%</span>`).join('');
+    const best=[...calc].sort((a,b)=>b.pct-a.pct)[0];
+    const worst=[...calc].sort((a,b)=>a.pct-b.pct)[0];
+    $('allocBest').innerHTML = calc.length>1
+      ? `Best: <b class="up">${best.pos.s} ${best.pct>=0?'+':''}${best.pct.toFixed(1)}%</b> &nbsp; Worst: <b class="down">${worst.pos.s} ${worst.pct>=0?'+':''}${worst.pct.toFixed(1)}%</b>`
+      : '';
+  }
+}
+
+/* ============================ MOVERS ============================ */
+let mvTab='gain';
+$('mvTabs').addEventListener('click',e=>{
+  const el=e.target.closest('.tab'); if(!el)return;
+  mvTab=el.dataset.mv;
+  document.querySelectorAll('#mvTabs .tab').forEach(x=>x.classList.toggle('active',x===el));
+  renderMovers();
+});
+function renderMovers(){
+  const arr=STOCKS.map(x=>({s:x.s,n:x.n||x.s,c:curChg(x.s),p:curPrice(x.s)}))
+                  .filter(x=>x.p!=null && isFinite(x.c))
+                  .sort((a,b)=> mvTab==='gain' ? b.c-a.c : a.c-b.c).slice(0,8);
+  $('moversList').innerHTML = arr.map((x,i)=>`
+    <div class="mv">
+      <span class="rk">${i+1}</span>
+      <div class="mi"><b>${x.s}</b><small>${descOf(x.s)}</small></div>
+      <div class="mp">${fmt(x.p)}</div>
+      <div class="mc ${cls(x.c)}">${x.c>0?'+':''}${x.c.toFixed(2)}%</div>
+      <a class="mchart" href="https://www.tradingview.com/symbols/PSX-${x.s}/" target="_blank" rel="noopener">chart ↗</a>
+    </div>`).join('');
+}
+
+/* ============================ INDICES ============================ */
+let indices={};
+const IDX_ORDER=['KSE100','KMI30','ALLSHR','KSE30','KMIALLSHR','BKTI','OGTI','PSXDIV20','MII30','NITPGI','NBPPGI','MZNPI','ACI','JSMFI','UPP9','JSGBKTI','KSE100PR'];
+const IDX_NAMES={
+  KSE100:'KSE-100 Index — top 100 companies',
+  KSE30:'KSE-30 Index — 30 large, free-float based',
+  KMI30:'KSE Meezan Index 30 — 30 Shariah companies',
+  ALLSHR:'PSX All Share Index — sab listed companies',
+  KMIALLSHR:'KMI All Share — sab Shariah companies',
+  BKTI:'Banking Sector Tradable Index',
+  OGTI:'Oil & Gas Tradable Index',
+  PSXDIV20:'PSX Dividend 20 — top dividend payers',
+  MII30:'Meezan Islamic Index',
+  MZNPI:'Meezan Pakistan Index (Al Meezan ETF)',
+  NITPGI:'NIT Pakistan Gateway Index (ETF)',
+  NBPPGI:'NBP Pakistan Growth Index (ETF)',
+  JSMFI:'JS Momentum Factor Index (ETF)',
+  JSGBKTI:'JS Global Banking Tradable Index (ETF)',
+  ACI:'AMC tradable / ETF-linked index',
+  UPP9:'AMC tradable / ETF-linked index',
+  HBLTTI:'HBL tradable / ETF-linked index',
+  KSE100PR:'KSE-100 (Price Return version)',
+};
+function renderIndices(){
+  const keys=Object.keys(indices);
+  const live=$('idxLiveTag');
+  if(!keys.length){ live.textContent='waiting'; live.className='live-tag off'; return; }
+  live.textContent='LIVE'; live.className='live-tag';
+  const ordered=[...IDX_ORDER.filter(k=>indices[k]), ...keys.filter(k=>!IDX_ORDER.includes(k))];
+  $('idxGrid').innerHTML = ordered.map(k=>{
+    const d=indices[k]||{}; const c=+d.c||0, p=+d.p||0;
+    return `<div class="idx-cell" title="${IDX_NAMES[k]||k}">
+      <div class="nm">${k}</div>
+      ${IDX_NAMES[k]?`<div class="idx-fn">${IDX_NAMES[k]}</div>`:''}
+      <div class="vv">${(+d.v||0).toLocaleString('en-PK',{maximumFractionDigits:2})}</div>
+      <div class="cc ${cls(c)}">${arw(c)} ${c>0?'+':''}${Math.round(c).toLocaleString('en-PK')} (${p>0?'+':''}${p.toFixed(2)}%)</div>
+    </div>`;
+  }).join('');
+  // compact header strip (key indices)
+  const head=$('headIdx');
+  if(head){
+    head.innerHTML = ['KMI30','ALLSHR','KSE30'].filter(k=>indices[k]).map(k=>{
+      const d=indices[k], p=+d.p||0;
+      return `<div class="hidx"><span class="hn">${k}</span><span class="hv">${(+d.v||0).toLocaleString('en-PK',{maximumFractionDigits:0})}</span><span class="hc ${cls(p)}">${p>0?'+':''}${p.toFixed(2)}%</span></div>`;
+    }).join('');
+  }
+}
+
+/* ============================ DIP ALERTS ============================ */
+let universe={}, hiMap={}, dipTab='20';
+let hi52={}; // {SYM:{h,l}} true 52-week high/low from robot (psx:52w)
+function applyUniverse(u){
+  if(!u || typeof u!=='object') return;
+  universe=u;
+  Object.keys(u).forEach(s=>{
+    const idx = typeof u[s]==='string' ? u[s] : (u[s] && u[s].i) || '';
+    const ex = STOCKS.find(x=>x.s===s);
+    if(ex){ ex.idx=idx; }
+    else { STOCKS.push({s, n:s, idx}); }
+  });
+}
+$('dipTabs').addEventListener('click',e=>{
+  const el=e.target.closest('.tab'); if(!el)return;
+  dipTab=el.dataset.dip;
+  document.querySelectorAll('#dipTabs .tab').forEach(x=>x.classList.toggle('active',x===el));
+  renderDips();
+});
+function renderDips(){
+  const held=new Set(portfolio.map(p=>p.s));
+  const thr = dipTab==='hold' ? 0 : +dipTab;
+  const rows=[];
+  STOCKS.forEach(x=>{
+    if(dipTab==='hold' && !held.has(x.s)) return;
+    const cur=curPrice(x.s); if(!cur) return;
+    const h52=(hi52[x.s]&&hi52[x.s].h)?hi52[x.s].h:(hiMap[x.s]||0);
+    const hi=Math.max(h52, cur);
+    if(hi<=0) return;
+    const dip=(hi-cur)/hi*100;
+    const lo=(hi52[x.s]&&hi52[x.s].l)?hi52[x.s].l:0;
+    const upLo=lo>0?((cur-lo)/lo*100):null;
+    if(dip>=thr && dip>0.01) rows.push({s:x.s,n:x.n||x.s,cur,hi,dip,lo,upLo,is52:!!(hi52[x.s]&&hi52[x.s].h)});
+  });
+  rows.sort((a,b)=>b.dip-a.dip);
+  const top=rows.slice(0,25);
+  if(!top.length){
+    $('dipList').innerHTML='<div class="empty">Filhaal koi significant dip nahi (is threshold par). Robot jaise jaise chalega, highs build honge.</div>';
+    return;
+  }
+  $('dipList').innerHTML = top.map(r=>{
+    const w=Math.max(4,Math.min(100, r.dip/60*100));
+    return `
+    <div class="dip">
+      <div class="di"><b>${r.s}</b><small>${descOf(r.s)}</small></div>
+      <div class="dbar" title="${r.dip.toFixed(1)}% below ${r.is52?'52-week':'recent'} high"><span style="width:${w}%"></span></div>
+      <div class="dv">
+        <span class="dv-now">Now ${fmt(r.cur)}</span>
+        <span class="dv-hl">H ${fmt(r.hi)} <b class="down">-${r.dip.toFixed(1)}%</b></span>
+        ${r.is52&&r.lo>0?`<span class="dv-hl">L ${fmt(r.lo)} <b class="up">+${r.upLo.toFixed(1)}%</b></span>`:``}
+      </div>
+      <a class="dc" href="https://www.tradingview.com/symbols/PSX-${r.s}/" target="_blank" rel="noopener">chart ↗</a>
+    </div>`;}).join('');
+}
+
+/* ============================ DATA SOURCES ============================ */
+const DATA_SOURCES = [
+  {name:'PSX Data Portal (DPS)',   sec:'Live-ish quotes, screener, sectors (5-min delayed)', url:'https://dps.psx.com.pk/'},
+  {name:'PSX Stock Screener',      sec:'Filter by price, P/E, sector', url:'https://dps.psx.com.pk/screener'},
+  {name:'Sarmaaya — PSX Portal',   sec:'Gainers / losers / actives, indices', url:'https://psx.sarmaaya.pk/'},
+  {name:'Sarmaaya — Stocks',       sec:'All listed companies + fundamentals + screener', url:'https://sarmaaya.pk/stocks'},
+  {name:'ksestocks.com',           sec:'Daily closing rates & full history', url:'https://www.ksestocks.com/MarketSummary'},
+  {name:'StockAnalysis — PSX',     sec:'484 stocks by market cap, financials', url:'https://stockanalysis.com/list/pakistan-stock-exchange/'},
+  {name:'Investing.com — Pakistan',sec:'Equities, charts, price alerts', url:'https://www.investing.com/equities/pakistan'},
+  {name:'TradingView — Pakistan',  sec:'Charts & advanced screener', url:'https://www.tradingview.com/markets/stocks-pakistan/'}
+];
+$('dataList').innerHTML = DATA_SOURCES.map(x=>`
+  <a class="lk" href="${x.url}" target="_blank" rel="noopener">
+    <div class="av nw">${x.name.charAt(0)}</div>
+    <div class="meta"><b>${x.name}</b><small>${x.sec}</small></div>
+    <span class="go">Open ↗</span>
+  </a>`).join('');
+
+/* ============================ IPO / NEWS / LINK LISTS ============================ */
+$('ipoList').innerHTML = IPOS.map(x=>`
+  <a class="lk" href="https://www.google.com/search?q=${encodeURIComponent('PSX '+x.name+' IPO listing')}" target="_blank" rel="noopener">
+    <div class="av ipo">${x.name.charAt(0)}</div>
+    <div class="meta"><b>${x.name}</b><small>${x.sec}</small></div>
+    <span class="ipo-tag ${x.status}">${x.tag}</span>
+  </a>`).join('');
+
+$('newsList').innerHTML = NEWS.map(x=>`
+  <a class="lk" href="${x.url}" target="_blank" rel="noopener">
+    <div class="av nw">${x.name.charAt(0)}</div>
+    <div class="meta"><b>${x.name}</b><small>${x.sec}</small></div>
+    <span class="go">Open ↗</span>
+  </a>`).join('');
+
+function normUrl(u){ if(!/^https?:\/\//i.test(u)) u='https://'+u; return u; }
+function renderLinks(listEl, arr, avClass, key){
+  if(!arr.length){ listEl.innerHTML=`<div class="empty">Abhi koi link nahi. Niche add karein.</div>`; return; }
+  listEl.innerHTML = arr.map((x,i)=>`
+    <a class="lk" href="${x.url}" target="_blank" rel="noopener">
+      <div class="av ${avClass}">${(x.name||'?').charAt(0).toUpperCase()}</div>
+      <div class="meta"><b>${x.name}</b><small>${x.url.replace(/^https?:\/\//,'')}</small></div>
+      <span class="del" data-i="${i}" data-key="${key}">×</span>
+    </a>`).join('');
+  listEl.querySelectorAll('.del').forEach(d=>d.addEventListener('click',async(e)=>{
+    e.preventDefault();
+    const i=+d.dataset.i;
+    if(key==='yt'){ ytLinks.splice(i,1); await store.set('psx:yt',ytLinks); renderLinks($('ytList'),ytLinks,'yt','yt'); }
+    else{ waLinks.splice(i,1); await store.set('psx:wa',waLinks); renderLinks($('waList'),waLinks,'wa','wa'); }
+  }));
+}
+$('ytAdd').addEventListener('click',async()=>{
+  const name=$('ytName').value.trim()||'Channel', url=$('ytUrl').value.trim();
+  if(!url) return; ytLinks.push({name,url:normUrl(url)});
+  await store.set('psx:yt',ytLinks); $('ytName').value=$('ytUrl').value='';
+  renderLinks($('ytList'),ytLinks,'yt','yt');
+});
+$('waAdd').addEventListener('click',async()=>{
+  const name=$('waName').value.trim()||'Channel', url=$('waUrl').value.trim();
+  if(!url) return; waLinks.push({name,url:normUrl(url)});
+  await store.set('psx:wa',waLinks); $('waName').value=$('waUrl').value='';
+  renderLinks($('waList'),waLinks,'wa','wa');
+});
+
+/* ============================ INDEX EDIT + MARKET STATUS ============================ */
+let rawKse=187455, rawKseChg=2082;
+function renderKse(){
+  const v=+rawKse||0, c=+rawKseChg||0;
+  $('kseVal').textContent = v ? Math.round(v).toLocaleString('en-PK') : '—';
+  const pct=(v-c)?c/(v-c)*100:0;
+  const k=c>0?'up':(c<0?'down':'flat');
+  $('kseChgLine').className='idx-sub '+k;
+  $('kseArrow').textContent = c>0?'▲':(c<0?'▼':'—');
+  $('kseChgVal').textContent = (c>0?'+':'')+Math.round(c).toLocaleString('en-PK');
+  $('kseChgPct').textContent = `(${c>0?'+':''}${pct.toFixed(2)}%)`;
+  renderMktNotes();
+}
+
+/* ===== DAILY MARKET NOTE ===== */
+let mktNotes=[];
+function renderMktNotes(){
+  if(!$('mnPanel')) return;
+  const v=+rawKse||0, c=+rawKseChg||0, pct=(v-c)?c/(v-c)*100:0;
+  const k=c>0?'up':(c<0?'down':'flat');
+  const prev=v-c;
+  $('mnKse').innerHTML=
+    `<div class="mn-day"><span>${fmtD(prevTradingDay())} <small>(before)</small></span><b>${prev?Math.round(prev).toLocaleString('en-PK'):'—'}</b></div>`+
+    `<div class="mn-day after"><span>${fmtD(new Date())} <small>(after)</small></span>`+
+    `<b>${v?Math.round(v).toLocaleString('en-PK'):'—'} <span style="color:${c>0?'var(--up)':c<0?'var(--down)':'var(--muted)'};font-weight:700">${c>0?'+':''}${Math.round(c).toLocaleString('en-PK')} (${c>0?'+':''}${pct.toFixed(2)}%)</span></b></div>`;
+  if(!mktNotes.length){ $('mnList').innerHTML='<div class="empty">Abhi koi manual note nahi. Neeche apni wajah bhi likh sakte hain.</div>'; renderMktNews(); return; }
+  $('mnList').innerHTML=mktNotes.slice(0,6).map((n,i)=>`
+    <div class="mn-note">${canEdit?`<span class="x" data-mn="${i}" title="Remove">✕</span>`:''}
+      <div class="d">${n.date||''} · KSE ${(n.chg||0)>0?'+':''}${Math.round(n.chg||0).toLocaleString('en-PK')}</div>
+      <div class="t">${n.text}</div></div>`).join('');
+  renderMktNews();
+}
+let newsFeed=[];
+function renderMktNews(){
+  const el=$('mnNews'); if(!el) return;
+  if(!newsFeed.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="mn-newshead">📰 Latest market news (auto)</div>`+
+    newsFeed.slice(0,4).map(n=>`<a class="mn-newsitem" href="${n.u||'#'}" target="_blank" rel="noopener">${n.t}</a>`).join('');
+}
+if($('mnAdd')){
+  $('mnAdd').addEventListener('click',async()=>{
+    if(!canEdit)return; const t=$('mnText').value.trim(); if(!t){ alert('Aaj ki wajah (1 line) likhein.'); return; }
+    mktNotes.unshift({date:todayStr(), kse:+rawKse||0, chg:+rawKseChg||0, text:t});
+    mktNotes=mktNotes.slice(0,30);
+    await store.set('psx:mktnotes',mktNotes); $('mnText').value=''; renderMktNotes();
+  });
+  $('mnText').addEventListener('keydown',e=>{ if(e.key==='Enter') $('mnAdd').click(); });
+  $('mnList').addEventListener('click',async e=>{
+    const b=e.target.closest('[data-mn]'); if(!b||!canEdit)return;
+    if(!confirm('Ye note hata dein?'))return;
+    mktNotes.splice(+b.dataset.mn,1); await store.set('psx:mktnotes',mktNotes); renderMktNotes();
+  });
+}
+$('kseVal').addEventListener('blur',async()=>{
+  if(!canEdit){ renderKse(); return; }
+  const v=parseFloat($('kseVal').textContent.replace(/[^\d.]/g,''));
+  if(!isNaN(v)&&v>0){ rawKse=v; await store.set('psx:kse',v); }
+  renderKse();
+});
+$('kseChgVal').addEventListener('blur',async()=>{
+  if(!canEdit){ renderKse(); return; }
+  const neg=/-/.test($('kseChgVal').textContent);
+  let c=parseFloat($('kseChgVal').textContent.replace(/[^\d.]/g,''));
+  if(!isNaN(c)){ rawKseChg=neg?-c:c; await store.set('psx:kseChg',rawKseChg); }
+  renderKse();
+});
+function marketStatus(){
+  // PKT = UTC+5
+  const now=new Date();
+  const utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const pkt=new Date(utc+5*3600000);
+  const day=pkt.getDay(); // 0 Sun..6 Sat
+  const mins=pkt.getHours()*60+pkt.getMinutes();
+  let open=false;
+  if(day>=1 && day<=4){ open = mins>=570 && mins<=930; }        // Mon-Thu 9:30-15:30
+  else if(day===5){ open = (mins>=557&&mins<=720)||(mins>=872&&mins<=990); } // Fri split
+  $('mktDot').className='dot '+(open?'open':'closed');
+  $('mktTxt').textContent = open?'Open now':'Closed';
+  $('mktTxt').style.color = open?'var(--up)':'var(--muted)';
+  mktIsOpen = open;
+  renderFreshness();
+}
+
+let mktIsOpen=false, lastUpdated=0;
+function renderFreshness(){
+  const el=$('freshBar'); if(!el) return;
+  if(!lastUpdated){
+    if(mktIsOpen){ el.className='fresh-bar warn'; el.innerHTML='⚠️ Prices ka last-update time abhi maloom nahi — robot ne naya time-stamp nahi likha. GitHub Actions se <b>Run workflow</b> chalayein.'; }
+    else { el.className='fresh-bar ok'; el.textContent=''; }
+    return;
+  }
+  const mins=Math.max(0, Math.round((Date.now()/1000 - lastUpdated)/60));
+  const ago = mins<1?'abhi':(mins<60?mins+' min pehle':Math.floor(mins/60)+' ghante '+(mins%60)+' min pehle');
+  if(mktIsOpen && mins>25){
+    el.className='fresh-bar warn';
+    el.innerHTML=`⚠️ Prices <b>${ago}</b> update huin (market OPEN hai). Data purana ho sakta hai — GitHub Actions se <b>Run workflow</b> chalayein, ya Watchlist → Bulk update.`;
+  } else {
+    el.className='fresh-bar ok';
+    el.textContent=`✓ Prices last updated: ${ago}${mktIsOpen?'':' · market band'}`;
+  }
+}
+
+/* ============================ ROLE (view-only / editor) ============================ */
+function applyRole(){
+  document.body.classList.toggle('viewonly', !canEdit);
+  $('roleTxt').textContent = canEdit ? 'Editor' : 'View only';
+  $('roleTxt').classList.toggle('editor', canEdit);
+  $('roleBtn').textContent = canEdit ? '🔒 Lock (view only)' : '🔓 Unlock editing';
+  $('kseVal').setAttribute('contenteditable', canEdit ? 'true' : 'false');
+  $('kseChgVal').setAttribute('contenteditable', canEdit ? 'true' : 'false');
+}
+function setRole(edit){
+  canEdit = edit;
+  try{ localStorage.setItem('psx:role', edit?'editor':'view'); }catch(e){}
+  applyRole(); renderPortfolio(); renderRealized(); renderWatchlist();
+}
+$('roleBtn').addEventListener('click',()=>{
+  if(canEdit){ setRole(false); return; }
+  openPinModal();
+});
+
+/* masked PIN modal */
+function openPinModal(){
+  $('pinInput').value=''; $('pinErr').textContent='';
+  $('pinInput').type='password'; $('pinEye').textContent='👁';
+  $('pinModal').classList.add('show');
+  setTimeout(()=>$('pinInput').focus(),50);
+}
+function closePinModal(){ $('pinModal').classList.remove('show'); $('pinInput').value=''; }
+function submitPin(){
+  if($('pinInput').value===OWNER_PIN){ closePinModal(); setRole(true); }
+  else { $('pinErr').textContent='Ghalat PIN. Dobara koshish karein.'; $('pinInput').value=''; $('pinInput').focus(); }
+}
+$('pinOk').addEventListener('click',submitPin);
+$('pinCancel').addEventListener('click',closePinModal);
+$('pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter')submitPin(); if(e.key==='Escape')closePinModal(); });
+$('pinEye').addEventListener('click',()=>{
+  const inp=$('pinInput');
+  if(inp.type==='password'){ inp.type='text'; $('pinEye').textContent='🙈'; } else { inp.type='password'; $('pinEye').textContent='👁'; }
+  inp.focus();
+});
+$('pinModal').addEventListener('click',e=>{ if(e.target===$('pinModal'))closePinModal(); });
+function setSyncUI(){
+  const d=$('syncDot'), t=$('syncTxt'), note=$('syncNote');
+  if(useFB){ d.className='dot live'; t.textContent='Live · synced'; note.textContent='Jo bhi ye link kholega, sab ko same data real-time dikhega.'; }
+  else{ d.className='dot local'; t.textContent='Local only'; note.textContent='Sync tab chalega jab file online host ho (Netlify). Abhi data sirf is device par.'; }
+}
+
+/* ============================ INIT ============================ */
+(async function init(){
+  // role from this device
+  try{ canEdit = localStorage.getItem('psx:role')==='editor'; }catch(e){ canEdit=false; }
+  setSyncUI(); applyRole();
+
+  overrides = (await store.get('psx:overrides',{})) || {};
+  portfolio = toArr(await store.get('psx:portfolio',[]));
+  realized = toArr(await store.get('psx:realized',[]));
+  meta = (await store.get('psx:meta',null)) || {};
+  navs = (await store.get('psx:navs',null)) || {};
+  acct = (await store.get('psx:acct',null)) || {};
+  gold = (await store.get('psx:gold',null)) || gold;
+  if($('glBuy')){ glFill(); renderGold(); }
+  mktNotes = toArr(await store.get('psx:mktnotes',[]));
+  newsFeed = toArr(await store.get('psx:news',[]));
+  lastUpdated = +(await store.get('psx:updated',0))||0;
+  if($('wdBroker')){ wdFillAcct(); calcWd(); }
+  if($('tiBroker')){ tiFillAcct(); tiRender(); }
+  try{ if(await store.get('psx:txn_jul2026',false)){ const b=$('applyTxnBtn'); if(b){ b.textContent='✓ July applied'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:mif_added',false)){ const b=$('addMifBtn'); if(b){ b.textContent='✓ Meezan Fund added'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_jul30',false)){ const b=$('jul30Btn'); if(b){ b.textContent='✓ 30-Jul applied'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:orbit_added',false)){ const b=$('orbitBtn'); if(b){ b.textContent='✓ Orbit added'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sep11',false)){ const b=$('sep11Btn'); if(b){ b.textContent='✓ 11-Sep applied'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sepsells',false)){ const b=$('sepSellBtn'); if(b){ b.textContent='✓ 7-Sep sells booked'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:sep_buys_fixed',false)){ const b=$('sepFixBtn'); if(b){ b.textContent='✓ Prices fixed'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_meblsell',false)){ const b=$('meblSellBtn'); if(b){ b.textContent='✓ MEBL sell booked'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sep21',false)){ const b=$('sep21Btn'); if(b){ b.textContent='✓ 21-Sep sells booked'; b.disabled=true; } } }catch(e){}
+  ytLinks   = toArr(await store.get('psx:yt',null));
+  waLinks   = toArr(await store.get('psx:wa',null));
+  applyUniverse(await store.get('psx:universe',null));   // full PSX list from robot
+  indices = (await store.get('psx:indices',{})) || {};
+  hiMap   = (await store.get('psx:hi',{})) || {};
+  hi52    = (await store.get('psx:52w',{})) || {};
+
+  // one-time seeding (only editor writes, so boss never overwrites)
+  if(canEdit){
+    const seeded = await store.get('psx:seeded', false);
+    if(!seeded){
+      if(!ytLinks.length) ytLinks=[...YT_SEED];
+      if(!waLinks.length) waLinks=[...WA_SEED];
+      await store.set('psx:yt',ytLinks);
+      await store.set('psx:wa',waLinks);
+      await store.set('psx:seeded', true);
+    }
+    // one-time: load user's actual holdings from broker statements (KTrade + Arif Habib)
+    const pfSeeded = await store.get('psx:pf_seeded2', false);
+    if(!pfSeeded){
+      portfolio = PF_SEED.map(p=>({s:p.s,qty:p.qty,cost:p.cost,cur:p.cur,target:null,platform:p.pf,date:'',notes:''}));
+      PF_SEED.forEach(p=>{ overrides[p.s]={p:p.cur,c:0}; });   // shared market current per symbol
+      await store.set('psx:portfolio',portfolio);
+      await store.set('psx:overrides',overrides);
+      await store.set('psx:pf_seeded', true);
+      await store.set('psx:pf_seeded2', true);
+    }
+  }
+  const kse = await store.get('psx:kse',null);
+  const kseC = await store.get('psx:kseChg',null);
+  if(kse!=null) rawKse=+kse;
+  if(kseC!=null) rawKseChg=+kseC;
+  renderKse();
+
+  buildTicker();
+  renderWatchlist();
+  renderMovers();
+  renderIndices();
+  renderDips();
+  populateChartSelect(); updateChartLinks();
+  populateSymList();
+  calcTrade(); pRender();
+  renderPortfolio();
+  renderRealized();
+  renderLinks($('ytList'),ytLinks,'yt','yt');
+  renderLinks($('waList'),waLinks,'wa','wa');
+  marketStatus(); setInterval(marketStatus,60000);
+
+  // LIVE SYNC: when hosted online, push updates to everyone in real time
+  if(useFB){
+    store.sub('psx:portfolio', v=>{ portfolio=toArr(v); renderPortfolio(); renderDips(); });
+    store.sub('psx:realized', v=>{ realized=toArr(v); renderRealized(); renderPortfolio(); });
+    store.sub('psx:meta', v=>{ meta=v||{}; renderWatchlist(); renderMovers(); renderDips(); renderPortfolio(); });
+    store.sub('psx:navs', v=>{ navs=v||{}; renderPortfolio(); });
+    store.sub('psx:acct', v=>{ acct=v||{}; if($('wdBroker')) wdFillAcct(); if($('tiBroker')) tiFillAcct(); });
+    store.sub('psx:gold', v=>{ if(v){ gold=v; if($('glBuy')){ glFill(); renderGold(); } } });
+    store.sub('psx:mktnotes', v=>{ mktNotes=toArr(v); renderMktNotes(); });
+    store.sub('psx:news', v=>{ newsFeed=toArr(v); renderMktNews(); });
+    store.sub('psx:updated', v=>{ lastUpdated=+v||0; renderFreshness(); });
+    store.sub('psx:overrides', v=>{ overrides=v||{}; renderWatchlist(); buildTicker(); renderMovers(); renderPortfolio(); renderDips(); });
+    store.sub('psx:kse', v=>{ if(v!=null){ rawKse=+v; renderKse(); } });
+    store.sub('psx:kseChg', v=>{ if(v!=null){ rawKseChg=+v; renderKse(); } });
+    store.sub('psx:universe', v=>{ applyUniverse(v); renderWatchlist(); renderMovers(); renderDips(); });
+    store.sub('psx:indices', v=>{ indices=v||{}; renderIndices(); });
+    store.sub('psx:hi', v=>{ hiMap=v||{}; renderDips(); });
+    store.sub('psx:52w', v=>{ hi52=v||{}; renderDips(); });
+    store.sub('psx:yt', v=>{ ytLinks=toArr(v); renderLinks($('ytList'),ytLinks,'yt','yt'); });
+    store.sub('psx:wa', v=>{ waLinks=toArr(v); renderLinks($('waList'),waLinks,'wa','wa'); });
+  }
+})();
+</script>
+</body>
+</html>
