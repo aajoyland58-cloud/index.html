@@ -568,6 +568,7 @@
       <div class="p-head">
         <div class="p-title"><span class="bar"></span>Portfolio &amp; P&amp;L</div>
         <div style="display:flex;gap:8px">
+          <button class="btn sm owner-only" id="rebuildBtn" title="Portfolio + Sold History poore ledger se dobara banata hai (sahi + consistent)" style="border-color:var(--accent);color:var(--accent);font-weight:700">🔄 Rebuild from ledger</button>
           <button class="btn sm owner-only" id="applyTxnBtn" title="Ye July 2026 KTrade+AHL buy/sell ek dafa daal degi" style="border-color:var(--up);color:var(--up)">⚙ Apply July buys/sells</button>
           <button class="btn sm owner-only" id="addMifBtn" title="Meezan Islamic Fund holding ek dafa add karti hai" style="border-color:var(--accent);color:var(--accent)">＋ Add Meezan Fund</button>
           <button class="btn sm owner-only" id="jul30Btn" title="30-Jul KTrade buys ek dafa add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 30-Jul buys</button>
@@ -1931,6 +1932,36 @@ async function applySep22(){
   alert('Done! 10 Arif Habib buys alag lots (22-Sep) add ho gaye.');
 }
 $('sep22Btn') && $('sep22Btn').addEventListener('click', applySep22);
+
+// ===== REBUILD portfolio + realized from the full ledger (TXLOG) =====
+async function rebuildFromLedger(){
+  if(!canEdit) return;
+  if(!confirm('Portfolio + Sold History ko POORE ledger (TXLOG) se dobara banayein?\n\nYe current holdings aur realized ko ledger ke mutabiq exact set kar dega. (Individual apply-buttons ki zaroorat khatam.)\n\nProceed?')) return;
+  const tx=TXLOG.slice().sort((a,b)=> a[0]===b[0] ? ((a[2]==='SELL'?1:0)-(b[2]==='SELL'?1:0)) : (a[0]<b[0]?-1:1));
+  const inv={}; const rlz=[];
+  for(const [d,br,act,sym,qty,amt] of tx){
+    const k=br+'|'+sym; if(!inv[k]) inv[k]={qty:0,cost:0};
+    if(act==='BUY'){ inv[k].qty+=qty; inv[k].cost+=amt; }
+    else if(act==='BONUS'){ inv[k].qty+=qty; }
+    else if(act==='SELL'){ const avg=inv[k].qty>0?inv[k].cost/inv[k].qty:0; const co=avg*qty;
+      rlz.push({date:d, s:sym, platform:br, qty, cost:+avg.toFixed(4), sell:+(amt/qty).toFixed(4), pnl:amt-co});
+      inv[k].qty-=qty; inv[k].cost-=co; }
+  }
+  portfolio = Object.entries(inv).filter(([k,v])=>v.qty>1e-6).map(([k,v])=>{
+    const [br,sym]=k.split('|');
+    return {s:sym, platform:br, qty:+v.qty.toFixed(4), cost:+(v.cost/v.qty).toFixed(4),
+            cur:(curPrice(sym)!=null?curPrice(sym):+(v.cost/v.qty).toFixed(4)), target:null, date:'', notes:'ledger'};
+  });
+  realized = rlz;
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:realized',realized);
+  // clear one-time flags so buttons don't double-apply on top of a rebuild
+  for(const f of ['psx:txn_jul2026','psx:mif_added','psx:txn_jul30','psx:orbit_added','psx:txn_sep11','psx:txn_sepsells','psx:sep_buys_fixed','psx:txn_meblsell','psx:txn_sep21','psx:txn_sep21k','psx:txn_sep22']) { try{ await store.set(f,true); }catch(e){} }
+  renderPortfolio(); renderRealized(); renderInc();
+  const tot=rlz.reduce((a,r)=>a+r.pnl,0);
+  alert('Ho gaya! Ledger se rebuild complete.\nRealized P&L: '+rs(tot)+'\nHoldings: '+portfolio.length+' positions.');
+}
+$('rebuildBtn') && $('rebuildBtn').addEventListener('click', rebuildFromLedger);
 
 // ===== GOLD ETF (IAU) FLIP TRACKER (USD) =====
 let gold = {buy:84.38, qty:10, cur:84.17, tgt:5.5};
