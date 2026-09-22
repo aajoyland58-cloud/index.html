@@ -578,6 +578,7 @@
           <button class="btn sm owner-only" id="meblSellBtn" title="18-Sep KTrade MEBL 2855 sell book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 18-Sep MEBL sell</button>
           <button class="btn sm owner-only" id="sep21Btn" title="21-Sep Arif Habib sells (5) book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 21-Sep AHL sells</button>
           <button class="btn sm owner-only" id="sep21kBuyBtn" title="21-Sep KTrade buys (4) add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 21-Sep KTrade buys</button>
+          <button class="btn sm owner-only" id="sep22Btn" title="22-Sep Arif Habib buys (10) add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 22-Sep AHL buys</button>
           <button class="btn sm owner-only" id="pdfBtn">⬇ PDF statement</button>
           <button class="btn sm primary owner-only" id="addToggle">＋ Add Buy</button>
           <button class="btn sm ghost danger owner-only" id="clearPf">Clear all</button>
@@ -1903,6 +1904,34 @@ async function applySep21kBuys(){
 }
 $('sep21kBuyBtn') && $('sep21kBuyBtn').addEventListener('click', applySep21kBuys);
 
+// ===== ONE-TIME: 22-Sep Arif Habib buys (10) — separate lots =====
+const SEP22_BUYS=[
+  {s:'INIL', qty:3000, price:164.0412},
+  {s:'DGKC', qty:4000, price:198.0348},
+  {s:'APL',  qty:1000, price:579.0020},
+  {s:'OGDC', qty:4000, price:318.7888},
+  {s:'SSGC', qty:25000,price:23.9502},
+  {s:'THCCL',qty:5000, price:76.8774},
+  {s:'FFC',  qty:2500, price:540.5573},
+  {s:'PAEL', qty:13000,price:36.8970},
+  {s:'HCAR', qty:1200, price:224.4103},
+  {s:'PPL',  qty:5000, price:229.2992},
+];
+async function applySep22(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sep22',false)){ alert('22-Sep AHL buys pehle hi add ho chuke hain.'); return; }
+  if(!confirm('22-Sep Arif Habib buys (10) add karein? (alag lots, 22-Sep date)\n\nINIL, DGKC, APL, OGDC, SSGC, THCCL, FFC, PAEL, HCAR, PPL\nTotal ~ Rs 7,368,409.\n\nSirf EK dafa.')) return;
+  SEP22_BUYS.forEach(op=>{
+    portfolio.push({s:op.s, qty:op.qty, cost:op.price, cur:(curPrice(op.s)!=null?curPrice(op.s):op.price), platform:'Arif Habib (AHL)', date:'2026-09-22', notes:'22-Sep lot'});
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:txn_sep22',true);
+  renderPortfolio();
+  const b=$('sep22Btn'); if(b){ b.textContent='✓ 22-Sep AHL added'; b.disabled=true; }
+  alert('Done! 10 Arif Habib buys alag lots (22-Sep) add ho gaye.');
+}
+$('sep22Btn') && $('sep22Btn').addEventListener('click', applySep22);
+
 // ===== GOLD ETF (IAU) FLIP TRACKER (USD) =====
 let gold = {buy:84.38, qty:10, cur:84.17, tgt:5.5};
 let goldSaveT=null;
@@ -2289,6 +2318,16 @@ const TXLOG=[
  ['2026-09-21','KTrade','BUY','MARI',500,318032.69],
  ['2026-09-21','KTrade','BUY','POL',600,448372.11],
  ['2026-09-21','KTrade','BUY','SOYASUP',3500,109902.11],
+ ['2026-09-22','Arif Habib (AHL)','BUY','INIL',3000,492123.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','DGKC',4000,792139.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','APL',1000,579002.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','OGDC',4000,1275160.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','SSGC',25000,598755.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','THCCL',5000,384387.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','FFC',2500,1351390.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','PAEL',13000,479661.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','HCAR',1200,269292.00],
+ ['2026-09-22','Arif Habib (AHL)','BUY','PPL',5000,1146500.00],
 ];
 function mcData(ym){
   const tx=TXLOG.slice().sort((a,b)=> a[0]===b[0] ? ((a[2]==='SELL'?1:0)-(b[2]==='SELL'?1:0)) : (a[0]<b[0]?-1:1));
@@ -2937,6 +2976,7 @@ function setSyncUI(){
   try{ if(await store.get('psx:txn_meblsell',false)){ const b=$('meblSellBtn'); if(b){ b.textContent='✓ MEBL sell booked'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_sep21',false)){ const b=$('sep21Btn'); if(b){ b.textContent='✓ 21-Sep sells booked'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_sep21k',false)){ const b=$('sep21kBuyBtn'); if(b){ b.textContent='✓ 21-Sep KTrade added'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sep22',false)){ const b=$('sep22Btn'); if(b){ b.textContent='✓ 22-Sep AHL added'; b.disabled=true; } } }catch(e){}
   ytLinks   = toArr(await store.get('psx:yt',null));
   waLinks   = toArr(await store.get('psx:wa',null));
   applyUniverse(await store.get('psx:universe',null));   // full PSX list from robot
