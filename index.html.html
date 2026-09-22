@@ -577,6 +577,7 @@
           <button class="btn sm owner-only" id="sepFixBtn" title="Sep AHL buy prices ko all-in par set karti hai" style="border-color:var(--muted);color:var(--muted)">⚙ Fix Sep buy prices</button>
           <button class="btn sm owner-only" id="meblSellBtn" title="18-Sep KTrade MEBL 2855 sell book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 18-Sep MEBL sell</button>
           <button class="btn sm owner-only" id="sep21Btn" title="21-Sep Arif Habib sells (5) book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 21-Sep AHL sells</button>
+          <button class="btn sm owner-only" id="sep21kBuyBtn" title="21-Sep KTrade buys (4) add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 21-Sep KTrade buys</button>
           <button class="btn sm owner-only" id="pdfBtn">⬇ PDF statement</button>
           <button class="btn sm primary owner-only" id="addToggle">＋ Add Buy</button>
           <button class="btn sm ghost danger owner-only" id="clearPf">Clear all</button>
@@ -1514,16 +1515,10 @@ $('pfAdd').addEventListener('click',async()=>{
   if(editIdx>=0){
     portfolio[editIdx]=rec; pfStatus(`✓ ${f.s} updated.`); editIdx=-1;
   } else {
-    const ex=portfolio.find(p=>p.s===f.s && (p.platform||'')===(f.platform||''));
-    if(ex){
-      const totQty=ex.qty+f.qty;
-      ex.cost=(ex.qty*ex.cost+f.qty*f.cost)/totQty; ex.qty=totQty;
-      if(f.curIn!=null) ex.cur=f.curIn;
-      if(f.target!=null) ex.target=f.target;
-      if(f.date) ex.date=f.date;
-      if(f.notes) ex.notes=f.notes;
-      pfStatus(`✓ ${f.s} (${f.platform||'no platform'}): averaged → ${totQty} @ ${fmt(ex.cost)}`);
-    } else { portfolio.push(rec); pfStatus(`✓ ${f.s}${f.platform?' · '+f.platform:''} added.`); }
+    // Lot-by-lot: har buy alag row (apni date + rate ke saath) — average nahi karta
+    portfolio.push(rec);
+    const dup=portfolio.filter(p=>p.s===f.s && (p.platform||'')===(f.platform||'')).length;
+    pfStatus(`✓ ${f.s}${f.platform?' · '+f.platform:''} added${dup>1?` (alag lot #${dup} — purana rate apni jaga)`:''}.`);
   }
   await store.set('psx:portfolio',portfolio);
   clearAddForm(); showForm(false); $('pfAdd').textContent=SAVE_LBL;
@@ -1885,6 +1880,28 @@ async function applySep21(){
   alert(`Done! ${n} sells book ho gayin. Sale Journal + Monthly Closure + Incentive update.`+(warn.length?`\n\nSkip:\n- ${warn.join('\n- ')}`:''));
 }
 $('sep21Btn') && $('sep21Btn').addEventListener('click', applySep21);
+
+// ===== ONE-TIME: 21-Sep KTrade buys (4) — separate lots, not averaged =====
+const SEP21K_BUYS=[
+  {s:'HUBC',    qty:2000, price:204.6496},
+  {s:'MARI',    qty:500,  price:636.0654},
+  {s:'POL',     qty:600,  price:747.2869},
+  {s:'SOYASUP', qty:3500, price:31.4006},
+];
+async function applySep21kBuys(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sep21k',false)){ alert('21-Sep KTrade buys pehle hi add ho chuki hain.'); return; }
+  if(!confirm('21-Sep KTrade buys add karein? (alag lots, purani buys apni jaga rahengi)\n\nHUBC 2000 @ 204.65 · MARI 500 @ 636.07 · POL 600 @ 747.29 · SOYASUP 3500 @ 31.40\n\nSirf EK dafa.')) return;
+  SEP21K_BUYS.forEach(op=>{
+    portfolio.push({s:op.s, qty:op.qty, cost:op.price, cur:(curPrice(op.s)!=null?curPrice(op.s):op.price), platform:'KTrade', date:'2026-09-21', notes:'21-Sep lot'});
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:txn_sep21k',true);
+  renderPortfolio();
+  const b=$('sep21kBuyBtn'); if(b){ b.textContent='✓ 21-Sep KTrade added'; b.disabled=true; }
+  alert('Done! 4 KTrade buys alag lots ke tor par add ho gaye (21-Sep). Purani HUBC/MARI apni jaga hain.');
+}
+$('sep21kBuyBtn') && $('sep21kBuyBtn').addEventListener('click', applySep21kBuys);
 
 // ===== GOLD ETF (IAU) FLIP TRACKER (USD) =====
 let gold = {buy:84.38, qty:10, cur:84.17, tgt:5.5};
@@ -2268,6 +2285,10 @@ const TXLOG=[
  ['2026-09-21','Arif Habib (AHL)','SELL','MEBL',4000,2200577.64],
  ['2026-09-21','Arif Habib (AHL)','SELL','MLCF',15500,1465394.57],
  ['2026-09-21','Arif Habib (AHL)','SELL','SSGC',21000,505540.77],
+ ['2026-09-21','KTrade','BUY','HUBC',2000,409299.26],
+ ['2026-09-21','KTrade','BUY','MARI',500,318032.69],
+ ['2026-09-21','KTrade','BUY','POL',600,448372.11],
+ ['2026-09-21','KTrade','BUY','SOYASUP',3500,109902.11],
 ];
 function mcData(ym){
   const tx=TXLOG.slice().sort((a,b)=> a[0]===b[0] ? ((a[2]==='SELL'?1:0)-(b[2]==='SELL'?1:0)) : (a[0]<b[0]?-1:1));
@@ -2915,6 +2936,7 @@ function setSyncUI(){
   try{ if(await store.get('psx:sep_buys_fixed',false)){ const b=$('sepFixBtn'); if(b){ b.textContent='✓ Prices fixed'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_meblsell',false)){ const b=$('meblSellBtn'); if(b){ b.textContent='✓ MEBL sell booked'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_sep21',false)){ const b=$('sep21Btn'); if(b){ b.textContent='✓ 21-Sep sells booked'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sep21k',false)){ const b=$('sep21kBuyBtn'); if(b){ b.textContent='✓ 21-Sep KTrade added'; b.disabled=true; } } }catch(e){}
   ytLinks   = toArr(await store.get('psx:yt',null));
   waLinks   = toArr(await store.get('psx:wa',null));
   applyUniverse(await store.get('psx:universe',null));   // full PSX list from robot
