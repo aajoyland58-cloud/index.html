@@ -568,18 +568,7 @@
       <div class="p-head">
         <div class="p-title"><span class="bar"></span>Portfolio &amp; P&amp;L</div>
         <div style="display:flex;gap:8px">
-          <button class="btn sm owner-only" id="rebuildBtn" title="Portfolio + Sold History poore ledger se dobara banata hai (sahi + consistent)" style="border-color:var(--accent);color:var(--accent);font-weight:700">🔄 Rebuild from ledger</button>
-          <button class="btn sm owner-only" id="applyTxnBtn" title="Ye July 2026 KTrade+AHL buy/sell ek dafa daal degi" style="border-color:var(--up);color:var(--up)">⚙ Apply July buys/sells</button>
-          <button class="btn sm owner-only" id="addMifBtn" title="Meezan Islamic Fund holding ek dafa add karti hai" style="border-color:var(--accent);color:var(--accent)">＋ Add Meezan Fund</button>
-          <button class="btn sm owner-only" id="jul30Btn" title="30-Jul KTrade buys ek dafa add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 30-Jul buys</button>
-          <button class="btn sm owner-only" id="orbitBtn" title="Orbit Securities SEARL holding ek dafa add karti hai" style="border-color:var(--accent);color:var(--accent)">＋ Add Orbit (SEARL)</button>
-          <button class="btn sm owner-only" id="sep11Btn" title="11-Sep Arif Habib buys ek dafa add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 11-Sep AHL buys</button>
-          <button class="btn sm owner-only" id="sepSellBtn" title="7-Sep Arif Habib sells ek dafa book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 7-Sep AHL sells</button>
-          <button class="btn sm owner-only" id="sepFixBtn" title="Sep AHL buy prices ko all-in par set karti hai" style="border-color:var(--muted);color:var(--muted)">⚙ Fix Sep buy prices</button>
-          <button class="btn sm owner-only" id="meblSellBtn" title="18-Sep KTrade MEBL 2855 sell book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 18-Sep MEBL sell</button>
-          <button class="btn sm owner-only" id="sep21Btn" title="21-Sep Arif Habib sells (5) book karti hai" style="border-color:var(--down);color:var(--down)">₨↓ Apply 21-Sep AHL sells</button>
-          <button class="btn sm owner-only" id="sep21kBuyBtn" title="21-Sep KTrade buys (4) add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 21-Sep KTrade buys</button>
-          <button class="btn sm owner-only" id="sep22Btn" title="22-Sep Arif Habib buys (10) add karti hai" style="border-color:var(--up);color:var(--up)">＋ Apply 22-Sep AHL buys</button>
+          <button class="btn sm owner-only" id="rebuildBtn" title="Live holdings + Sold History ko ledger se sync karta hai (month-end)" style="border-color:var(--accent);color:var(--accent);font-weight:700">🔄 Rebuild from ledger</button>
           <button class="btn sm owner-only" id="pdfBtn">⬇ PDF statement</button>
           <button class="btn sm primary owner-only" id="addToggle">＋ Add Buy</button>
           <button class="btn sm ghost danger owner-only" id="clearPf">Clear all</button>
@@ -1933,6 +1922,26 @@ async function applySep22(){
 }
 $('sep22Btn') && $('sep22Btn').addEventListener('click', applySep22);
 
+// ===== ONE-TIME: 25-Sep KTrade buys (NRL, PSO) =====
+const SEP25_BUYS=[
+  {s:'NRL', qty:1000, price:549.80},
+  {s:'PSO', qty:1000, price:351.08},
+];
+async function applySep25(){
+  if(!canEdit) return;
+  if(await store.get('psx:txn_sep25',false)){ alert('25-Sep buys pehle hi add ho chuke hain.'); return; }
+  if(!confirm('25-Sep KTrade buys add karein?\n\nNRL 1000 @ 549.80 · PSO 1000 @ 351.08\n\nSirf EK dafa.')) return;
+  SEP25_BUYS.forEach(op=>{
+    portfolio.push({s:op.s, qty:op.qty, cost:op.price, cur:(curPrice(op.s)!=null?curPrice(op.s):op.price), platform:'Arif Habib (AHL)', date:'2026-09-25', notes:'25-Sep lot'});
+  });
+  await store.set('psx:portfolio',portfolio);
+  await store.set('psx:txn_sep25',true);
+  renderPortfolio();
+  const b=$('sep25Btn'); if(b){ b.textContent='✓ 25-Sep added'; b.disabled=true; }
+  alert('Done! NRL + PSO (KTrade, 25-Sep) add ho gaye.');
+}
+$('sep25Btn') && $('sep25Btn').addEventListener('click', applySep25);
+
 // ===== REBUILD portfolio + realized from the full ledger (TXLOG) =====
 async function rebuildFromLedger(){
   if(!canEdit) return;
@@ -1956,7 +1965,7 @@ async function rebuildFromLedger(){
   await store.set('psx:portfolio',portfolio);
   await store.set('psx:realized',realized);
   // clear one-time flags so buttons don't double-apply on top of a rebuild
-  for(const f of ['psx:txn_jul2026','psx:mif_added','psx:txn_jul30','psx:orbit_added','psx:txn_sep11','psx:txn_sepsells','psx:sep_buys_fixed','psx:txn_meblsell','psx:txn_sep21','psx:txn_sep21k','psx:txn_sep22']) { try{ await store.set(f,true); }catch(e){} }
+  for(const f of ['psx:txn_jul2026','psx:mif_added','psx:txn_jul30','psx:orbit_added','psx:txn_sep11','psx:txn_sepsells','psx:sep_buys_fixed','psx:txn_meblsell','psx:txn_sep21','psx:txn_sep21k','psx:txn_sep22','psx:txn_sep25']) { try{ await store.set(f,true); }catch(e){} }
   renderPortfolio(); renderRealized(); renderInc();
   const tot=rlz.reduce((a,r)=>a+r.pnl,0);
   alert('Ho gaya! Ledger se rebuild complete.\nRealized P&L: '+rs(tot)+'\nHoldings: '+portfolio.length+' positions.');
@@ -2359,6 +2368,13 @@ const TXLOG=[
  ['2026-09-22','Arif Habib (AHL)','BUY','PAEL',13000,479661.00],
  ['2026-09-22','Arif Habib (AHL)','BUY','HCAR',1200,269292.00],
  ['2026-09-22','Arif Habib (AHL)','BUY','PPL',5000,1146500.00],
+ ['2026-09-28','Arif Habib (AHL)','BUY','NRL',1000,550753.40],
+ ['2026-09-28','Arif Habib (AHL)','BUY','PSO',1000,351690.60],
+ ['2026-09-28','Arif Habib (AHL)','SELL','INIL',3000,504645.60],
+ ['2026-09-28','Arif Habib (AHL)','SELL','PPL',5010,1157789.40],
+ ['2026-09-28','Arif Habib (AHL)','SELL','SSGC',25000,603087.50],
+ ['2026-09-28','Arif Habib (AHL)','SELL','TPLP',10,123.08],
+ ['2026-09-28','Arif Habib (AHL)','SELL','NRL',1000,568100.00],
 ];
 function mcData(ym){
   const tx=TXLOG.slice().sort((a,b)=> a[0]===b[0] ? ((a[2]==='SELL'?1:0)-(b[2]==='SELL'?1:0)) : (a[0]<b[0]?-1:1));
@@ -2916,20 +2932,16 @@ function marketStatus(){
 let mktIsOpen=false, lastUpdated=0;
 function renderFreshness(){
   const el=$('freshBar'); if(!el) return;
+  // Prices ab manual update hoti hain (PSX ne auto endpoint band kar diya) — koi red warning nahi.
   if(!lastUpdated){
-    if(mktIsOpen){ el.className='fresh-bar warn'; el.innerHTML='⚠️ Prices ka last-update time abhi maloom nahi — robot ne naya time-stamp nahi likha. GitHub Actions se <b>Run workflow</b> chalayein.'; }
-    else { el.className='fresh-bar ok'; el.textContent=''; }
+    el.className='fresh-bar ok';
+    el.innerHTML='ℹ️ Prices manually update hoti hain (Watchlist → ⇊ Bulk update). Realized P&L / Monthly / Target sab trades se banta hai — prices se nahi.';
     return;
   }
   const mins=Math.max(0, Math.round((Date.now()/1000 - lastUpdated)/60));
-  const ago = mins<1?'abhi':(mins<60?mins+' min pehle':Math.floor(mins/60)+' ghante '+(mins%60)+' min pehle');
-  if(mktIsOpen && mins>25){
-    el.className='fresh-bar warn';
-    el.innerHTML=`⚠️ Prices <b>${ago}</b> update huin (market OPEN hai). Data purana ho sakta hai — GitHub Actions se <b>Run workflow</b> chalayein, ya Watchlist → Bulk update.`;
-  } else {
-    el.className='fresh-bar ok';
-    el.textContent=`✓ Prices last updated: ${ago}${mktIsOpen?'':' · market band'}`;
-  }
+  const ago = mins<1?'abhi':(mins<60?mins+' min pehle':(mins<1440?Math.floor(mins/60)+' ghante pehle':Math.floor(mins/1440)+' din pehle'));
+  el.className='fresh-bar ok';
+  el.innerHTML=`ℹ️ Prices last updated: <b>${ago}</b> · manually update hoti hain (Watchlist → ⇊ Bulk update).`;
 }
 
 /* ============================ ROLE (view-only / editor) ============================ */
@@ -3008,6 +3020,7 @@ function setSyncUI(){
   try{ if(await store.get('psx:txn_sep21',false)){ const b=$('sep21Btn'); if(b){ b.textContent='✓ 21-Sep sells booked'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_sep21k',false)){ const b=$('sep21kBuyBtn'); if(b){ b.textContent='✓ 21-Sep KTrade added'; b.disabled=true; } } }catch(e){}
   try{ if(await store.get('psx:txn_sep22',false)){ const b=$('sep22Btn'); if(b){ b.textContent='✓ 22-Sep AHL added'; b.disabled=true; } } }catch(e){}
+  try{ if(await store.get('psx:txn_sep25',false)){ const b=$('sep25Btn'); if(b){ b.textContent='✓ 25-Sep added'; b.disabled=true; } } }catch(e){}
   ytLinks   = toArr(await store.get('psx:yt',null));
   waLinks   = toArr(await store.get('psx:wa',null));
   applyUniverse(await store.get('psx:universe',null));   // full PSX list from robot
