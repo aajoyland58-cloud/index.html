@@ -1511,6 +1511,11 @@ $('pfAdd').addEventListener('click',async()=>{
     const dup=portfolio.filter(p=>p.s===f.s && (p.platform||'')===(f.platform||'')).length;
     pfStatus(`✓ ${f.s}${f.platform?' · '+f.platform:''} added${dup>1?` (alag lot #${dup} — purana rate apni jaga)`:''}.`);
   }
+  // Agar user ne Current price manually diya, to override bhi update karo (robot ke purane/stale rate ko overwrite)
+  if(f.curIn!=null){
+    overrides[f.s] = {p:+f.curIn, c:(overrides[f.s] && overrides[f.s].c!=null)?overrides[f.s].c:0};
+    await store.set('psx:overrides', overrides);
+  }
   await store.set('psx:portfolio',portfolio);
   clearAddForm(); showForm(false); $('pfAdd').textContent=SAVE_LBL;
   renderPortfolio();
