@@ -585,6 +585,7 @@
         <div class="p-title"><span class="bar"></span>Portfolio &amp; P&amp;L</div>
         <div style="display:flex;gap:8px">
           <button class="btn sm owner-only" id="rebuildBtn" title="Live holdings + Sold History ko ledger se sync karta hai (month-end)" style="border-color:var(--accent);color:var(--accent);font-weight:700">🔄 Rebuild from ledger</button>
+          <button class="btn sm primary owner-only" id="bulkBtn2" title="Sab prices ek saath update">⇊ Update prices</button>
           <button class="btn sm owner-only" id="pdfBtn">⬇ PDF statement</button>
           <button class="btn sm primary owner-only" id="addToggle">＋ Add Buy</button>
           <button class="btn sm ghost danger owner-only" id="clearPf">Clear all</button>
@@ -656,7 +657,7 @@
         <div class="pf-summary" style="margin-bottom:10px">
           <div class="stat"><div class="k">Capital (invested)</div><div class="v" id="incCap">Rs 0</div></div>
           <div class="stat"><div class="k">5% Monthly Target</div><div class="v" id="incTgt">Rs 0</div></div>
-          <div class="stat"><div class="k">Realized Profit (booked)</div><div class="v" id="incReal">Rs 0</div></div>
+          <div class="stat"><div class="k">Realized (this month)</div><div class="v" id="incReal">Rs 0</div></div>
           <div class="stat"><div class="k">Incentive (5% of profit)</div><div class="v" id="incAmt">Rs 0</div></div>
         </div>
         <div class="inc-bar"><span id="incFill"></span></div>
@@ -1330,6 +1331,7 @@ function renderBulkPreview(){
   return out;
 }
 $('bulkBtn').addEventListener('click',()=>{ if(!canEdit)return; $('bulkText').value=''; $('bulkPreview').innerHTML='Yahan parse preview aayega…'; $('bulkModal').classList.add('show'); setTimeout(()=>$('bulkText').focus(),50); });
+$('bulkBtn2') && $('bulkBtn2').addEventListener('click',()=>{ if(!canEdit)return; $('bulkText').value=''; $('bulkPreview').innerHTML='Yahan parse preview aayega…'; $('bulkModal').classList.add('show'); setTimeout(()=>$('bulkText').focus(),50); });
 $('bulkText').addEventListener('input',renderBulkPreview);
 $('bulkCancel').addEventListener('click',()=>$('bulkModal').classList.remove('show'));
 $('bulkModal').addEventListener('click',e=>{ if(e.target===$('bulkModal'))$('bulkModal').classList.remove('show'); });
@@ -2272,11 +2274,14 @@ function setRlzCard(){
 function renderInc(){
   if(!$('incCap')) return;
   const cap = portfolio.reduce((a,p)=>a+(p.qty*p.cost),0);
-  const real = realized.reduce((a,r)=>a+((r.sell-r.cost)*r.qty),0);
+  const nowYM = (()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})();
+  // sirf CURRENT MONTH ka realized (Monthly Closure se match)
+  const real = realized.filter(r=>String(r.date||'').slice(0,7)===nowYM).reduce((a,r)=>a+((r.sell-r.cost)*r.qty),0);
   const tgt = 0.05*cap;
   const inc = real>0 ? 0.05*real : 0;
   const pctOfTgt = tgt>0 ? real/tgt*100 : 0;
   const capPct = cap>0 ? real/cap*100 : 0;
+  const remain = Math.max(0, tgt-real);
   $('incCap').textContent = rs(cap);
   $('incTgt').textContent = rs(tgt);
   $('incReal').innerHTML = `<span class="${cls(real)}">${real>=0?'+':''}${rs(real)}</span>`;
@@ -2284,9 +2289,9 @@ function renderInc(){
   const fillPct = Math.max(0, Math.min(100, pctOfTgt));
   $('incFill').style.width = fillPct+'%';
   $('incFill').style.background = pctOfTgt>=100?'var(--up)':(pctOfTgt>=0?'var(--accent)':'var(--down)');
-  $('incNote').innerHTML = `Realized = capital ka <b>${capPct.toFixed(2)}%</b> · 5% target ka <b>${pctOfTgt.toFixed(0)}%</b> ho chuka. `+
-    (pctOfTgt>=100?`🎉 Target cross! (${(capPct-5).toFixed(2)}% extra over 5%)`:`Target tak ${Math.max(0,100-fillPct).toFixed(0)}% baaki.`)+
-    ` Incentive = realized profit ka 5% (booked).`;
+  $('incNote').innerHTML = `<b>Is month</b> realized = capital ka <b>${capPct.toFixed(2)}%</b> · 5% target ka <b>${pctOfTgt.toFixed(0)}%</b>. `+
+    (pctOfTgt>=100?`🎉 Target poora! (+${rs(real-tgt)} extra)`:`Baaki: <b style="color:#e6b84a">${rs(remain)}</b>.`)+
+    ` Incentive = is month ke realized ka 5%.`;
   renderMcMonths();
 }
 
