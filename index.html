@@ -493,6 +493,22 @@
     .quick{gap:7px}
     .keys{grid-template-columns:repeat(4,1fr);gap:6px}
   }
+  @media (max-width:600px){
+    .wrap{padding:0 10px}
+    .p-head{flex-wrap:wrap;gap:8px}
+    .p-head > div{flex-wrap:wrap;gap:6px}
+    .btn.sm{font-size:11px;padding:5px 9px}
+    .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    #pfScroll{max-height:none}
+    #pfTable{font-size:10.5px}
+    #pfTable td,#pfTable th{padding:6px 3px}
+    #pfTable .pf-nm small{max-width:76px}
+    .stat .v{font-size:18px}
+    .mc-preview-box{font-size:12.5px}
+    .modal{width:94vw;max-width:94vw;padding:16px 14px}
+    .sell-grid{grid-template-columns:1fr}
+    table{font-size:12px}
+  }
 </style>
 </head>
 <body class="viewonly">
@@ -2417,7 +2433,7 @@ function renderMcPreview(){
     <div class="mc-row"><span>Realized P&L (month)</span><b class="${cls(d.realizedM)}">${d.realizedM>=0?'+':''}${rs(d.realizedM)}</b></div>
     <div class="mc-row"><span>Capital (month-end value)</span><b>${rs(d.cap)}</b></div>
     <div class="mc-row"><span>5% Target</span><b>${rs(d.target)}</b> <span class="muted">(${capPct.toFixed(2)}% done)</span></div>
-    <div class="mc-row"><span>Target remaining</span>${d.realizedM>=d.target ? `<b class="up">✓ Achieved (+${rs(d.realizedM-d.target)} over)</b>` : `<b class="down">${rs(d.target-d.realizedM)} baaki</b>`}</div>
+    <div class="mc-row"><span>Target remaining</span><b style="color:#e6b84a;font-weight:800">${d.realizedM>=d.target ? rs(0) : rs(d.target-d.realizedM)}</b></div>
     <div class="mc-row"><span>Incentive (5% of profit)</span><b class="up">${rs(d.incentive)}</b></div>
     <div class="mc-row"><span>Closing inventory (carry-forward)</span><b>${d.inv.length} pos · ${rs(d.invTot)}</b></div>
   </div>`;
@@ -2453,7 +2469,7 @@ function mcReportHTML(ym){
     <div class="card"><div class="k">Capital (month-end)</div><div class="v">${rs(d.cap)}</div></div>
     <div class="card"><div class="k">5% Target</div><div class="v">${rs(d.target)}</div></div>
     <div class="card"><div class="k">Incentive (5%)</div><div class="v" style="color:#1a7f37">${rs(d.incentive)}</div></div>
-    <div class="card"><div class="k">Target remaining</div><div class="v" style="color:${d.realizedM>=d.target?'#1a7f37':'#c1121f'}">${d.realizedM>=d.target?('✓ +'+rs(d.realizedM-d.target)):rs(d.target-d.realizedM)}</div></div>
+    <div class="card"><div class="k">Target remaining</div><div class="v" style="color:#c79a2e;font-weight:800">${d.realizedM>=d.target?rs(0):rs(d.target-d.realizedM)}</div></div>
   </div>
   <h3>Sells booked (${d.sells.length})</h3>
   <table><thead><tr><th>Date</th><th>Stock</th><th>Platform</th><th style="text-align:right">Qty</th><th style="text-align:right">Buy</th><th style="text-align:right">Sell</th><th style="text-align:right">Realized P/L</th><th style="text-align:right">ROI%</th></tr></thead><tbody>${sellRows}</tbody></table>
