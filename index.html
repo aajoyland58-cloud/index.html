@@ -2417,6 +2417,7 @@ function renderMcPreview(){
     <div class="mc-row"><span>Realized P&L (month)</span><b class="${cls(d.realizedM)}">${d.realizedM>=0?'+':''}${rs(d.realizedM)}</b></div>
     <div class="mc-row"><span>Capital (month-end value)</span><b>${rs(d.cap)}</b></div>
     <div class="mc-row"><span>5% Target</span><b>${rs(d.target)}</b> <span class="muted">(${capPct.toFixed(2)}% done)</span></div>
+    <div class="mc-row"><span>Target remaining</span>${d.realizedM>=d.target ? `<b class="up">✓ Achieved (+${rs(d.realizedM-d.target)} over)</b>` : `<b class="down">${rs(d.target-d.realizedM)} baaki</b>`}</div>
     <div class="mc-row"><span>Incentive (5% of profit)</span><b class="up">${rs(d.incentive)}</b></div>
     <div class="mc-row"><span>Closing inventory (carry-forward)</span><b>${d.inv.length} pos · ${rs(d.invTot)}</b></div>
   </div>`;
@@ -2452,7 +2453,7 @@ function mcReportHTML(ym){
     <div class="card"><div class="k">Capital (month-end)</div><div class="v">${rs(d.cap)}</div></div>
     <div class="card"><div class="k">5% Target</div><div class="v">${rs(d.target)}</div></div>
     <div class="card"><div class="k">Incentive (5%)</div><div class="v" style="color:#1a7f37">${rs(d.incentive)}</div></div>
-    <div class="card"><div class="k">Realized % of capital</div><div class="v">${capPct.toFixed(2)}%</div></div>
+    <div class="card"><div class="k">Target remaining</div><div class="v" style="color:${d.realizedM>=d.target?'#1a7f37':'#c1121f'}">${d.realizedM>=d.target?('✓ +'+rs(d.realizedM-d.target)):rs(d.target-d.realizedM)}</div></div>
   </div>
   <h3>Sells booked (${d.sells.length})</h3>
   <table><thead><tr><th>Date</th><th>Stock</th><th>Platform</th><th style="text-align:right">Qty</th><th style="text-align:right">Buy</th><th style="text-align:right">Sell</th><th style="text-align:right">Realized P/L</th><th style="text-align:right">ROI%</th></tr></thead><tbody>${sellRows}</tbody></table>
@@ -2471,7 +2472,7 @@ if($('mcMonth')){
     const ym=$('mcMonth').value; const d=mcData(ym);
     const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
     const lines=[['Monthly Closure',ym==='all'?'All':mcLabel(ym)],[],
-      ['Realized P&L (month)',Math.round(d.realizedM)],['Total Sale Value',Math.round(d.sellsVal)],['Capital (invested)',Math.round(d.cap)],['5% Target',Math.round(d.target)],['Incentive (5%)',Math.round(d.incentive)],[],
+      ['Realized P&L (month)',Math.round(d.realizedM)],['Total Sale Value',Math.round(d.sellsVal)],['Capital (invested)',Math.round(d.cap)],['5% Target',Math.round(d.target)],['Target remaining',Math.round(Math.max(0,d.target-d.realizedM))],['Incentive (5%)',Math.round(d.incentive)],[],
       ['SELLS'],['Date','Stock','Platform','Qty','Buy','Sell','Realized P/L','ROI%']];
     d.sells.forEach(r=>{const inv=r.cost*r.qty,pnl=(r.sell-r.cost)*r.qty,roi=inv?pnl/inv*100:0;lines.push([r.date||'',r.s,r.platform||'',r.qty,(+r.cost).toFixed(4),(+r.sell).toFixed(4),Math.round(pnl),roi.toFixed(1)+'%']);});
     lines.push([],['CLOSING INVENTORY (carry-forward)'],['Stock','Platform','Qty','Avg Cost','Cost Value']);
